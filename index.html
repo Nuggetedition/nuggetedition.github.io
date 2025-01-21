@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -30,6 +29,7 @@
             border-radius: 4px;
             background-color: #1e1e1e;
             color: #39FF14;
+            font-size: 16px;
         }
         .search-bar:focus {
             outline: none;
@@ -58,66 +58,6 @@
         .result-item:hover {
             background-color: #e0e0e0;
         }
-        .main-content {
-            padding: 20px;
-            text-align: center;
-        }
-        .greeting-message {
-            margin-bottom: 20px;
-            font-size: 24px;
-            color: #55ff33;
-        }
-        .game-cards {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
-        }
-        .game-card {
-            background-color: #1e1e1e;
-            border: 2px solid #39FF14;
-            border-radius: 8px;
-            width: 300px;
-            padding: 15px;
-            color: #39FF14;
-            text-align: center;
-            transition: transform 0.3s;
-            position: relative;
-            min-height: 200px;
-        }
-        .game-card:hover {
-            transform: translateY(-5px);
-            border-color: #55ff33;
-        }
-        .game-card img {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 6px;
-        }
-        .game-card h3 {
-            margin: 10px 0;
-            font-size: 20px;
-        }
-        .game-card p {
-            margin: 5px 0;
-            font-size: 14px;
-        }
-        .game-card a {
-            text-decoration: none;
-            color: #55ff33;
-            font-weight: bold;
-        }
-        .plus-sign {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 40px;
-            color: #39FF14;
-            cursor: pointer;
-        }
-
     </style>
 </head>
 
@@ -125,10 +65,38 @@
 <header>
     <h1>Sigma.site</h1>
     <div class="search-container">
-        <input type="text" class="search-bar" id="searchBar" placeholder=" Search our free games and services..." oninput="handleSearch()">
+        <input type="text" class="search-bar" id="searchBar" placeholder=" Search our free stuff and services..." oninput="handleSearch()">
         <div class="results-container" id="resultsContainer"></div>
     </div>
 </header>
 
+<script src="https://sigmagames69.github.io/data.js"></script>
+<script>
+    function handleSearch() {
+        const input = document.getElementById('searchBar').value.toLowerCase();
+        const resultsContainer = document.getElementById('resultsContainer');
+        resultsContainer.innerHTML = '';
+        if (input.trim() === '') {
+            resultsContainer.style.display = 'none';
+            return;
+        }
+        const filteredResults = data.filter(item => item.query.toLowerCase().includes(input));
+        if (filteredResults.length > 0) {
+            resultsContainer.style.display = 'block';
+            filteredResults.forEach(item => {
+                const resultItem = document.createElement('div');
+                resultItem.textContent = item.name;
+                resultItem.classList.add('result-item');
+                resultItem.onclick = () => {
+                    window.open(item.url, '_blank');
+                    resultsContainer.style.display = 'none';
+                };
+                resultsContainer.appendChild(resultItem);
+            });
+        } else {
+            resultsContainer.style.display = 'none';
+        }
+    }
+</script>
 </body>
 </html>
