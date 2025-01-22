@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unity WebGL Game</title>
+    <style>
+        /* You can add some custom styles here */
+        #unityContainer {
+            width: 960px; /* Set the width you want */
+            height: 600px; /* Set the height you want */
+            background-color: #000;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="unityContainer"></div>
+
+    <script src="Build/UnityLoader.js"></script> <!-- Path to UnityLoader.js -->
+    <script>
+        let buildUrl = "Build"; // Path to your build folder
+        let loaderUrl = buildUrl + "build.json"; // Your game build's JSON file
+        
+        let unityInstance = UnityLoader.instantiate("unityContainer", loaderUrl, {
+            onProgress: function (unityInstance, progress) {
+                console.log("Loading progress: " + progress);
+            }
+        });
+    </script>
+
+</body>
+</html>
