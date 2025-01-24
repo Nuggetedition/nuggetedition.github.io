@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NoClose</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+textarea {
+    width: 100%;
+    height: 150px;
+    margin-bottom: 20px;
+}
+table {
+    width: 100%;
+}
+iframe {
+    width: 100%;
+    height: 300px;
+    border: 1px solid #ccc;
+}
+.fullscreen-btn, .refresh-btn {
+    display: block;
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+textarea {
+    height: 20px;
+    width: 100px;
+}
+td {
+    border: 2px solid black;
+}
+</style>
+</head>
+<body>
+<p>touch/type in the box below to require conformation:</p>
+<textarea id="textInput"></textarea>
+
+<table>
+<tr>
+<td>
+    <iframe id="iframe1" src="https://mathmasterz.com/assets/mainstorage/geometrydash.html" title="GD"></iframe>
+    <center><button class="fullscreen-btn" onclick="toggleFullscreen('iframe1')">Fullscreen</button></center>
+    <center><button class="refresh-btn" onclick="refreshIframe('iframe1')">Refresh</button></center>
+</td>
+
+<td colspan="2">
+    <iframe id="iframe2" src="https://mathmasterz.com/assets/mainstorage/subwaysurferssaintpitsburg.html" title="sub surf"></iframe>
+    <center><button class="fullscreen-btn" onclick="toggleFullscreen('iframe2')">Fullscreen</button></center>
+    <center><button class="refresh-btn" onclick="refreshIframe('iframe2')">Refresh</button></center>
+</td>
+</tr>
+<tr>
+<td>
+    <iframe id="iframe3" src="https://mathmasterz.com/assets/mainstorage/paperplane.html" title="paper plane"></iframe>
+    <center><button class="fullscreen-btn" onclick="toggleFullscreen('iframe3')">Fullscreen</button></center>
+    <center><button class="refresh-btn" onclick="refreshIframe('iframe3')">Refresh</button></center>
+</td>
+
+<td colspan="2">
+    <iframe id="iframe4" src="https://mathmasterz.com/assets/mainstorage/1v1lol.html" title="1v1 lol"></iframe>
+    <center><button class="fullscreen-btn" onclick="toggleFullscreen('iframe4')">Fullscreen</button></center>
+    <center><button class="refresh-btn" onclick="refreshIframe('iframe4')">Refresh</button></center>
+</td>
+</tr>
+<tr>
+<td>
+    <iframe id="iframe5" src="https://mathmasterz.com/assets/mainstorage/drifthunters.html" title="drift hunters"></iframe>
+    <center><button class="fullscreen-btn" onclick="toggleFullscreen('iframe5')">Fullscreen</button></center>
+    <button class="refresh-btn" onclick="refreshIframe('iframe5')">Refresh</button>
+</td>
+
+<td colspan="2">
+    <iframe id="iframe6" src="https://mathmasterz.com/assets/mainstorage/redvsbluez.html" title="shooter"></iframe>
+    <center><button class="fullscreen-btn" onclick="toggleFullscreen('iframe6')">Fullscreen</button></center>
+    <button class="refresh-btn" onclick="refreshIframe('iframe6')">Refresh</button>
+</td>
+</tr>
+<tr>
+<td>
+    <iframe id="iframe7" src="https://mathmasterz.com/assets/mainstorage/gunblood.html" title="shooter"></iframe>
+    <center><button class="fullscreen-btn" onclick="toggleFullscreen('iframe7')">Fullscreen</button></center>
+    <center<button class="refresh-btn" onclick="refreshIframe('iframe7')">Refresh</button></center>
+</td>
+
+<td colspan="2">
+    <iframe id="iframe8" src="https://mathmasterz.com/assets/mainstorage/fnaf.html" title="fnaf"></iframe>
+    <center><button class="fullscreen-btn" onclick="toggleFullscreen('iframe8')">Fullscreen</button></center>
+    <center><button class="refresh-btn" onclick="refreshIframe('iframe8')">Refresh</button></center>
+</td>
+</tr>
+<tr>
+<td>
+    <iframe id="iframe9" src="https://mathmasterz.com/assets/mainstorage/fnaf2.html" title="fnaf2"></iframe>
+    <center><button class="fullscreen-btn" onclick="toggleFullscreen('iframe9')">Fullscreen</button></center>
+    <center><button class="refresh-btn" onclick="refreshIframe('iframe9')">Refresh</button></center>
+</td>
+
+<td colspan="2">
+    <iframe id="iframe10" src="https://mathmasterz.com/assets/mainstorage/fnaf3.html" title="fnaf3"></iframe>
+    <center><button class="fullscreen-btn" onclick="toggleFullscreen('iframe10')">Fullscreen</button></center>
+    <center><button class="refresh-btn" onclick="refreshIframe('iframe10')">Refresh</button></center>
+</td>
+</tr>
+<tr>
+<td>
+    <iframe id="iframe11" src="https://mathmasterz.com/assets/mainstorage/fnaf4.html" title="fnaf4"></iframe>
+    <center><button class="fullscreen-btn" onclick="toggleFullscreen('iframe11')">Fullscreen</button></center>
+    <center><button class="refresh-btn" onclick="refreshIframe('iframe11')">Refresh</button></center>
+</td>
+
+<td colspan="2">
+    <iframe id="iframe12" src="https://mathmasterz.com/assets/mainstorage/fnaf5.html" title="fnaf5"></iframe>
+    <center><button class="fullscreen-btn" onclick="toggleFullscreen('iframe12')">Fullscreen</button></center>
+    <center><button class="refresh-btn" onclick="refreshIframe('iframe12')">Refresh</button></center>
+</td>
+</tr>
+</table>
+
+<script>
+const textInput = document.getElementById('textInput');
+
+// Event to track input changes
+let isUnsaved = true;
+
+textInput.addEventListener('input', () => {
+    isUnsaved = true; // Set flag when user types
+});
+
+// Beforeunload event to confirm with the user
+window.addEventListener('beforeunload', (event) => {
+    if (isUnsaved) {
+        const confirmationMessage = 'You have unsaved changes. Are you sure you want to leave?';
+        event.returnValue = confirmationMessage; // For most browsers
+        return confirmationMessage; // For some browsers
+    }
+});
+
+// Function to toggle fullscreen
+function toggleFullscreen(iframeId) {
+    const iframe = document.getElementById(iframeId);
+    if (iframe.requestFullscreen) {
+        iframe.requestFullscreen();
+    } else if (iframe.mozRequestFullScreen) { // Firefox
+        iframe.mozRequestFullScreen();
+    } else if (iframe.webkitRequestFullscreen) { // Chrome, Safari and Opera
+        iframe.webkitRequestFullscreen();
+    } else if (iframe.msRequestFullscreen) { // IE/Edge
+        iframe.msRequestFullscreen();
+    }
+}
+
+// Function to refresh the iframe
+function refreshIframe(iframeId) {
+    const iframe = document.getElementById(iframeId);
+    iframe.src = iframe.src; // Refresh the iframe by resetting the src
+}
+</script>
+</body>
+</html>
