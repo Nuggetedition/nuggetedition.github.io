@@ -447,44 +447,6 @@
             margin: 1rem 0;
         }
 
-        /* Storage Status */
-        .storage-status {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .storage-item {
-            flex: 1;
-            min-width: 200px;
-            background: var(--card-bg);
-            padding: 1rem;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .storage-name {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--primary);
-        }
-
-        .storage-status-indicator {
-            height: 10px;
-            background: #333;
-            border-radius: 5px;
-            margin: 0.5rem 0;
-            overflow: hidden;
-        }
-
-        .storage-status-fill {
-            height: 100%;
-            background: var(--success);
-            border-radius: 5px;
-            transition: width 0.5s ease;
-        }
-
         /* Responsive Design */
         @media (max-width: 1024px) {
             .videos-grid {
@@ -509,10 +471,6 @@
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 1rem;
-            }
-            
-            .storage-status {
-                flex-direction: column;
             }
         }
 
@@ -612,37 +570,23 @@
             <div class="sidebar-section">
                 <div class="sidebar-title">Storage</div>
                 <div class="sidebar-item">
-                    <span>🌽</span> Cornfield 1
+                    <span>🌽</span> Cornfield Storage
                 </div>
                 <div class="sidebar-item">
-                    <span>🌽</span> Cornfield 2
+                    <span>🌽</span> Cornfield Storage 1
+                </div>
+                <div class="sidebar-item">
+                    <span>🌽</span> Cornfield Storage 2
                 </div>
             </div>
         </aside>
 
         <main class="content">
             <div class="section-header">
-                <h2 class="section-title">Featured Videos</h2>
+                <h2 class="section-title">All Videos</h2>
                 <div class="view-options">
                     <span class="view-option active">Grid</span>
                     <span class="view-option">List</span>
-                </div>
-            </div>
-
-            <div class="storage-status">
-                <div class="storage-item">
-                    <div class="storage-name">Cornfield 1</div>
-                    <div class="storage-status-indicator">
-                        <div class="storage-status-fill" style="width: 65%"></div>
-                    </div>
-                    <div class="storage-details">65% used • 12.3GB free</div>
-                </div>
-                <div class="storage-item">
-                    <div class="storage-name">Cornfield 2</div>
-                    <div class="storage-status-indicator">
-                        <div class="storage-status-fill" style="width: 42%"></div>
-                    </div>
-                    <div class="storage-details">42% used • 21.7GB free</div>
                 </div>
             </div>
 
@@ -664,8 +608,8 @@
             <div class="video-details">
                 <h2 class="video-player-title" id="videoTitle">Video Title</h2>
                 <div class="video-player-meta">
-                    <span id="videoViews">1.2M views</span>
-                    <span id="videoDate">2 weeks ago</span>
+                    <span id="videoSize">0 MB</span>
+                    <span id="videoDate">Unknown date</span>
                 </div>
                 <div class="video-actions">
                     <button class="action-btn">
@@ -686,9 +630,11 @@
     </div>
 
     <script>
-        // Storage endpoints
+        // Storage endpoints with proxy
         const storageEndpoints = [
-            'https://cornfieldstorage.ct.ws/corn/'
+            'https://cornfieldstorage.ct.ws/proxy.php' //,
+            // 'https://cornfieldstorage1.ct.ws/proxy.php',
+            // 'https://cornfieldstorage2.ct.ws/proxy.php'
         ];
 
         // DOM elements
@@ -696,7 +642,7 @@
         const videoModal = document.getElementById('videoModal');
         const videoPlayer = document.getElementById('videoPlayer');
         const videoTitle = document.getElementById('videoTitle');
-        const videoViews = document.getElementById('videoViews');
+        const videoSize = document.getElementById('videoSize');
         const videoDate = document.getElementById('videoDate');
         const closeModal = document.getElementById('closeModal');
         const searchBox = document.querySelector('.search-box');
@@ -706,7 +652,22 @@
         let videoData = [];
         let filteredVideos = [];
 
-        // Function to fetch directory listing (simulated for demo)
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Format date
+        function formatDate(timestamp) {
+            const date = new Date(timestamp * 1000);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+
+        // Fetch videos from storage using proxy
         async function fetchVideosFromStorage() {
             // Show loading state
             videosContainer.innerHTML = `
@@ -717,13 +678,29 @@
             `;
 
             try {
-                // In a real implementation, you would fetch from your storage endpoints
-                // For now, we'll simulate this with a timeout and sample data
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                const allVideos = [];
                 
-                // Sample video data (replace with actual fetched data)
-                videoData = [];
+                // Fetch from each storage endpoint
+                for (let i = 0; i < storageEndpoints.length; i++) {
+                    try {
+                        const response = await fetch(`${storageEndpoints[i]}?action=list`);
+                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                        
+                        const data = await response.json();
+                        if (data.videos && Array.isArray(data.videos)) {
+                            // Add storage source to each video
+                            data.videos.forEach(video => {
+                                video.storage = `Cornfield Storage ${i+1}`;
+                                video.id = `${i}-${video.filename}`;
+                            });
+                            allVideos.push(...data.videos);
+                        }
+                    } catch (error) {
+                        console.error(`Error fetching from ${storageEndpoints[i]}:`, error);
+                    }
+                }
 
+                videoData = allVideos;
                 filteredVideos = [...videoData];
                 displayVideos(filteredVideos);
                 
@@ -738,7 +715,7 @@
             }
         }
 
-        // Function to display videos in grid
+        // Display videos in grid
         function displayVideos(videos) {
             if (videos.length === 0) {
                 videosContainer.innerHTML = `
@@ -756,14 +733,14 @@
                 videoCard.className = 'video-card';
                 videoCard.innerHTML = `
                     <div class="thumbnail-container">
-                        <img src="${video.thumbnail}" alt="${video.title}" class="thumbnail">
-                        <div class="video-duration">${video.duration}</div>
+                        <img src="https://placehold.co/400x225/333/fff?text=${encodeURIComponent(video.title)}" class="thumbnail">
+                        <div class="video-duration">${formatFileSize(video.size)}</div>
                     </div>
                     <div class="video-info">
                         <h3 class="video-title">${video.title}</h3>
                         <div class="video-meta">
-                            <span>${video.views} views</span>
                             <span>${video.storage}</span>
+                            <span>${formatDate(video.modified)}</span>
                         </div>
                     </div>
                 `;
@@ -773,21 +750,25 @@
             });
         }
 
-        // Function to open video player
+        // Open video player
         function openVideoPlayer(video) {
-            videoPlayer.src = video.videoUrl;
+            videoPlayer.src = video.url;
             videoTitle.textContent = video.title;
-            videoViews.textContent = `${video.views} views`;
-            videoDate.textContent = video.date;
+            videoSize.textContent = formatFileSize(video.size);
+            videoDate.textContent = formatDate(video.modified);
             videoModal.style.display = 'flex';
-            document.body.style.overflow = 'hidden'; // Prevent scrolling
-            videoPlayer.play().catch(e => console.log('Autoplay prevented:', e));
+            document.body.style.overflow = 'hidden';
+            
+            // Try to play the video
+            videoPlayer.play().catch(e => {
+                console.log('Autoplay prevented:', e);
+            });
         }
 
-        // Function to close video player
+        // Close video player
         function closeVideoPlayer() {
             videoModal.style.display = 'none';
-            document.body.style.overflow = 'auto'; // Re-enable scrolling
+            document.body.style.overflow = 'auto';
             videoPlayer.pause();
             videoPlayer.currentTime = 0;
         }
@@ -840,6 +821,17 @@
                 item.addEventListener('click', function() {
                     document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
                     this.classList.add('active');
+                    
+                    // Filter by storage if a storage item is clicked
+                    const text = this.textContent.trim();
+                    if (text.includes('Storage')) {
+                        if (text === 'Cornfield Storage') {
+                            filteredVideos = videoData.filter(v => v.storage === 'Cornfield Storage 1');
+                        } else {
+                            filteredVideos = videoData.filter(v => v.storage === text);
+                        }
+                        displayVideos(filteredVideos);
+                    }
                 });
             });
             
@@ -852,30 +844,6 @@
                 });
             });
         });
-
-        // Function to simulate direct file access (for your actual implementation)
-        // This would need to be adapted based on your storage structure
-        async function scanStorageForVideos(storageUrl) {
-            try {
-                // This is a simplified approach - in reality you'd need to handle CORS
-                const response = await fetch(storageUrl, {
-                    mode: 'no-cors' // This might not work for all scenarios
-                });
-                
-                // Parse HTML response to find video files
-                // This would require server-side support or proper CORS configuration
-                console.log('Scanning storage:', storageUrl);
-                
-                // For now, we'll return sample data
-                return [
-                    { name: 'video1.mp4', url: storageUrl + 'video1.mp4', size: '124MB' },
-                    { name: 'video2.mp4', url: storageUrl + 'video2.mp4', size: '87MB' }
-                ];
-            } catch (error) {
-                console.error('Error scanning storage:', error);
-                return [];
-            }
-        }
     </script>
 </body>
 </html>
