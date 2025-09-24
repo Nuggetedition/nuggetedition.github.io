@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cornfield - Video Streaming Service</title>
+    <style>
+        :root {
+            --primary: #ff6b35;
+            --dark-bg: #0a0a0a;
+            --darker-bg: #050505;
+            --card-bg: #1a1a1a;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --accent: #ff8c5a;
+            --success: #4caf50;
+            --error: #f44336;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+
+        body {
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Header Styles */
+        header {
+            background: linear-gradient(135deg, var(--darker-bg) 0%, #1a1a1a 100%);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            border-bottom: 1px solid rgba(255, 107, 53, 0.2);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+            transition: transform 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: scale(1.05);
+        }
+
+        .logo-icon {
+            font-size: 2.2rem;
+            filter: drop-shadow(0 0 5px rgba(255, 107, 53, 0.5));
+        }
+
+        .search-container {
+            flex: 1;
+            max-width: 600px;
+            margin: 0 2rem;
+            position: relative;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 0.9rem 1.5rem;
+            border-radius: 30px;
+            border: 2px solid #333;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--primary);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            background: var(--accent);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.7rem 1.5rem;
+            border-radius: 6px;
+            border: none;
+            background: var(--card-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: var(--dark-bg);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Main Layout */
+        .app-container {
+            display: flex;
+            min-height: calc(100vh - 80px);
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 240px;
+            background: var(--darker-bg);
+            padding: 1.5rem 0;
+            overflow-y: auto;
+            flex-shrink: 0;
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-title {
+            padding: 0.5rem 1.5rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .sidebar-item {
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-item.active {
+            background: rgba(255, 107, 53, 0.1);
+            border-left-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .sidebar-item i {
+            font-size: 1.3rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .view-options {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .view-option {
+            padding: 0.5rem 1rem;
+            background: var(--card-bg);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .view-option.active {
+            background: var(--primary);
+            color: var(--dark-bg);
+        }
+
+        /* Video Grid */
+        .videos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .video-card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .video-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .thumbnail-container {
+            position: relative;
+            padding-top: 56.25%; /* 16:9 aspect ratio */
+            overflow: hidden;
+        }
+
+        .thumbnail {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .video-card:hover .thumbnail {
+            transform: scale(1.05);
+        }
+
+        .video-duration {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .video-info {
+            padding: 1rem;
+        }
+
+        .video-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.3;
+        }
+
+        .video-meta {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Video Player Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            width: 90%;
+            max-width: 1200px;
+            background: var(--darker-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .video-player-container {
+            width: 100%;
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+        }
+
+        .video-player {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+        }
+
+        .video-details {
+            padding: 1.5rem;
+        }
+
+        .video-player-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .video-player-meta {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .video-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 2001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .close-modal:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: scale(1.1);
+        }
+
+        /* Loading States */
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 107, 53, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Error States */
+        .error {
+            text-align: center;
+            padding: 2rem;
+            color: var(--error);
+            background: rgba(244, 67, 54, 0.1);
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        /* Storage Status */
+        .storage-status {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .storage-item {
+            flex: 1;
+            min-width: 200px;
+            background: var(--card-bg);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .storage-name {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+
+        .storage-status-indicator {
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+            margin: 0.5rem 0;
+            overflow: hidden;
+        }
+
+        .storage-status-fill {
+            height: 100%;
+            background: var(--success);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .videos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .search-container {
+                margin: 0 1rem;
+            }
+            
+            .content {
+                padding: 1rem;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .storage-status {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            header {
+                padding: 1rem;
+                flex-wrap: wrap;
+            }
+            
+            .logo span {
+                display: none;
+            }
+            
+            .search-container {
+                order: 3;
+                margin: 1rem 0 0;
+                width: 100%;
+            }
+            
+            .videos-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .user-actions {
+                width: 100%;
+                justify-content: center;
+                margin-top: 1rem;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--darker-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="#" class="logo">
+            <span class="logo-icon">🌽</span>
+            <span>Cornfield</span>
+        </a>
+        <div class="search-container">
+            <input type="text" class="search-box" placeholder="Search for videos...">
+            <button class="search-btn">🔍</button>
+        </div>
+        <div class="user-actions">
+            <button class="btn">
+                <span>📤</span> Upload
+            </button>
+            <button class="btn btn-primary">
+                <span>👤</span> Sign In
+            </button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-item active">
+                    <span>🏠</span> Home
+                </div>
+                <div class="sidebar-item">
+                    <span>🔥</span> Trending
+                </div>
+                <div class="sidebar-item">
+                    <span>📺</span> Subscriptions
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">Library</div>
+                <div class="sidebar-item">
+                    <span>📚</span> Your Videos
+                </div>
+                <div class="sidebar-item">
+                    <span>⏱️</span> Watch History
+                </div>
+                <div class="sidebar-item">
+                    <span>👍</span> Liked Videos
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">Storage</div>
+                <div class="sidebar-item">
+                    <span>🌽</span> Cornfield 1
+                </div>
+                <div class="sidebar-item">
+                    <span>🌽</span> Cornfield 2
+                </div>
+            </div>
+        </aside>
+
+        <main class="content">
+            <div class="section-header">
+                <h2 class="section-title">Featured Videos</h2>
+                <div class="view-options">
+                    <span class="view-option active">Grid</span>
+                    <span class="view-option">List</span>
+                </div>
+            </div>
+
+            <div class="storage-status">
+                <div class="storage-item">
+                    <div class="storage-name">Cornfield 1</div>
+                    <div class="storage-status-indicator">
+                        <div class="storage-status-fill" style="width: 65%"></div>
+                    </div>
+                    <div class="storage-details">65% used • 12.3GB free</div>
+                </div>
+                <div class="storage-item">
+                    <div class="storage-name">Cornfield 2</div>
+                    <div class="storage-status-indicator">
+                        <div class="storage-status-fill" style="width: 42%"></div>
+                    </div>
+                    <div class="storage-details">42% used • 21.7GB free</div>
+                </div>
+            </div>
+
+            <div class="videos-grid" id="videosContainer">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Loading videos from Cornfield storage...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div class="modal" id="videoModal">
+        <button class="close-modal" id="closeModal">&times;</button>
+        <div class="modal-content">
+            <div class="video-player-container">
+                <video controls class="video-player" id="videoPlayer"></video>
+            </div>
+            <div class="video-details">
+                <h2 class="video-player-title" id="videoTitle">Video Title</h2>
+                <div class="video-player-meta">
+                    <span id="videoViews">1.2M views</span>
+                    <span id="videoDate">2 weeks ago</span>
+                </div>
+                <div class="video-actions">
+                    <button class="action-btn">
+                        <span>👍</span> Like
+                    </button>
+                    <button class="action-btn">
+                        <span>👎</span> Dislike
+                    </button>
+                    <button class="action-btn">
+                        <span>💬</span> Comment
+                    </button>
+                    <button class="action-btn">
+                        <span>📤</span> Share
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Storage endpoints
+        const storageEndpoints = [
+            'https://cornfieldstorage.ct.ws/corn/'
+        ];
+
+        // DOM elements
+        const videosContainer = document.getElementById('videosContainer');
+        const videoModal = document.getElementById('videoModal');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const videoTitle = document.getElementById('videoTitle');
+        const videoViews = document.getElementById('videoViews');
+        const videoDate = document.getElementById('videoDate');
+        const closeModal = document.getElementById('closeModal');
+        const searchBox = document.querySelector('.search-box');
+        const searchBtn = document.querySelector('.search-btn');
+
+        // Video data cache
+        let videoData = [];
+        let filteredVideos = [];
+
+        // Function to fetch directory listing (simulated for demo)
+        async function fetchVideosFromStorage() {
+            // Show loading state
+            videosContainer.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Scanning Cornfield storage for videos...</p>
+                </div>
+            `;
+
+            try {
+                // In a real implementation, you would fetch from your storage endpoints
+                // For now, we'll simulate this with a timeout and sample data
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Sample video data (replace with actual fetched data)
+                videoData = [];
+
+                filteredVideos = [...videoData];
+                displayVideos(filteredVideos);
+                
+            } catch (error) {
+                console.error('Error fetching videos:', error);
+                videosContainer.innerHTML = `
+                    <div class="error">
+                        <p>Failed to load videos from storage. Please check your connection and try again.</p>
+                        <button class="btn btn-primary" style="margin-top: 1rem;" onclick="fetchVideosFromStorage()">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Function to display videos in grid
+        function displayVideos(videos) {
+            if (videos.length === 0) {
+                videosContainer.innerHTML = `
+                    <div class="loading">
+                        <p>No videos found matching your search.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            videosContainer.innerHTML = '';
+            
+            videos.forEach(video => {
+                const videoCard = document.createElement('div');
+                videoCard.className = 'video-card';
+                videoCard.innerHTML = `
+                    <div class="thumbnail-container">
+                        <img src="${video.thumbnail}" alt="${video.title}" class="thumbnail">
+                        <div class="video-duration">${video.duration}</div>
+                    </div>
+                    <div class="video-info">
+                        <h3 class="video-title">${video.title}</h3>
+                        <div class="video-meta">
+                            <span>${video.views} views</span>
+                            <span>${video.storage}</span>
+                        </div>
+                    </div>
+                `;
+                
+                videoCard.addEventListener('click', () => openVideoPlayer(video));
+                videosContainer.appendChild(videoCard);
+            });
+        }
+
+        // Function to open video player
+        function openVideoPlayer(video) {
+            videoPlayer.src = video.videoUrl;
+            videoTitle.textContent = video.title;
+            videoViews.textContent = `${video.views} views`;
+            videoDate.textContent = video.date;
+            videoModal.style.display = 'flex';
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+            videoPlayer.play().catch(e => console.log('Autoplay prevented:', e));
+        }
+
+        // Function to close video player
+        function closeVideoPlayer() {
+            videoModal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Re-enable scrolling
+            videoPlayer.pause();
+            videoPlayer.currentTime = 0;
+        }
+
+        // Search functionality
+        function searchVideos(query) {
+            if (!query.trim()) {
+                filteredVideos = [...videoData];
+            } else {
+                filteredVideos = videoData.filter(video => 
+                    video.title.toLowerCase().includes(query.toLowerCase())
+                );
+            }
+            displayVideos(filteredVideos);
+        }
+
+        // Event listeners
+        closeModal.addEventListener('click', closeVideoPlayer);
+        videoModal.addEventListener('click', (e) => {
+            if (e.target === videoModal) {
+                closeVideoPlayer();
+            }
+        });
+
+        searchBox.addEventListener('input', (e) => {
+            searchVideos(e.target.value);
+        });
+
+        searchBtn.addEventListener('click', () => {
+            searchVideos(searchBox.value);
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && videoModal.style.display === 'flex') {
+                closeVideoPlayer();
+            }
+            
+            if (e.key === 'Enter' && document.activeElement === searchBox) {
+                searchVideos(searchBox.value);
+            }
+        });
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchVideosFromStorage();
+            
+            // Add click handlers for sidebar items
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            // Add click handlers for view options
+            document.querySelectorAll('.view-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.view-option').forEach(o => o.classList.remove('active'));
+                    this.classList.add('active');
+                    // In a real implementation, this would change the view layout
+                });
+            });
+        });
+
+        // Function to simulate direct file access (for your actual implementation)
+        // This would need to be adapted based on your storage structure
+        async function scanStorageForVideos(storageUrl) {
+            try {
+                // This is a simplified approach - in reality you'd need to handle CORS
+                const response = await fetch(storageUrl, {
+                    mode: 'no-cors' // This might not work for all scenarios
+                });
+                
+                // Parse HTML response to find video files
+                // This would require server-side support or proper CORS configuration
+                console.log('Scanning storage:', storageUrl);
+                
+                // For now, we'll return sample data
+                return [
+                    { name: 'video1.mp4', url: storageUrl + 'video1.mp4', size: '124MB' },
+                    { name: 'video2.mp4', url: storageUrl + 'video2.mp4', size: '87MB' }
+                ];
+            } catch (error) {
+                console.error('Error scanning storage:', error);
+                return [];
+            }
+        }
+    </script>
+</body>
+</html>
