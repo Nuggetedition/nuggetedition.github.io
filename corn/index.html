@@ -472,11 +472,6 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
-        .action-btn.active {
-            background: var(--primary);
-            color: var(--dark-bg);
-        }
-
         .close-modal {
             position: absolute;
             top: 20px;
@@ -530,6 +525,36 @@
             background: rgba(244, 67, 54, 0.1);
             border-radius: 8px;
             margin: 1rem 0;
+        }
+
+        .debug-console {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.9);
+            color: #00ff00;
+            padding: 1rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 3000;
+            display: none;
+        }
+
+        .debug-toggle {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            z-index: 3001;
         }
 
         @media (max-width: 1024px) {
@@ -705,12 +730,6 @@
                     <span id="videoStorage">Unknown storage</span>
                 </div>
                 <div class="video-actions">
-                    <button class="action-btn" id="likeButton">
-                        <span>👍</span> <span id="likeCount">0</span>
-                    </button>
-                    <button class="action-btn" id="dislikeButton">
-                        <span>👎</span> <span id="dislikeCount">0</span>
-                    </button>
                     <button class="action-btn" id="downloadButton">
                         <span>📥</span> Download
                     </button>
@@ -722,17 +741,36 @@
         </div>
     </div>
 
+    <div class="debug-console" id="debugConsole"></div>
+    <button class="debug-toggle" id="debugToggle">🔧</button>
+
     <script>
+        // Debug logging system
+        var debugConsole = document.getElementById('debugConsole');
+        var debugToggle = document.getElementById('debugToggle');
+        var debugEnabled = false;
+        
+        function debugLog(message) {
+            console.log(message);
+            if (debugEnabled) {
+                var timestamp = new Date().toLocaleTimeString();
+                debugConsole.innerHTML += '[' + timestamp + '] ' + message + '\n';
+                debugConsole.scrollTop = debugConsole.scrollHeight;
+            }
+        }
+        
+        debugToggle.addEventListener('click', function() {
+            debugEnabled = !debugEnabled;
+            debugConsole.style.display = debugEnabled ? 'block' : 'none';
+            debugLog('Debug console ' + (debugEnabled ? 'enabled' : 'disabled'));
+        });
+
         // Storage endpoints with proxy
         const storageEndpoints = [
             'https://cornfieldstorage.ct.ws/proxy.php',
             'https://cornfieldstorage1.ct.ws/proxy.php',
             'https://cornfieldstorage2.ct.ws/proxy.php'
         ];
-
-        // Database endpoint (for likes/dislikes only)
-        const dbEndpoint = 'https://cornfieldstorage.ct.ws/db.php';
-        const apiKey = 'nigger_nigger_nigger_nigger';
 
         // App state
         let currentStorage = 0;
@@ -742,14 +780,6 @@
         let recentPaths = JSON.parse(localStorage.getItem('cornfield_recent_paths') || '[]');
         let currentView = 'grid';
         let currentVideo = null;
-        let userId = localStorage.getItem('cornfield_user_id') || generateUserId();
-
-        // Generate unique user ID
-        function generateUserId() {
-            const id = 'user_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
-            localStorage.setItem('cornfield_user_id', id);
-            return id;
-        }
 
         // Format file size
         function formatFileSize(bytes) {
@@ -840,6 +870,7 @@
 
         // Navigate to directory
         function navigateToDirectory(path) {
+            debugLog('Navigating to directory: ' + path);
             currentPath = path;
             addToRecentPaths(path);
             updateBreadcrumb(path);
@@ -862,6 +893,7 @@
 
         // Change storage
         function changeStorage(index) {
+            debugLog('Changing storage to: ' + index);
             currentStorage = index;
             var storageItems = document.querySelectorAll('.sidebar-item[data-storage]');
             storageItems.forEach(function(item) {
@@ -873,6 +905,7 @@
 
         // Change view mode
         function changeViewMode(mode) {
+            debugLog('Changing view mode to: ' + mode);
             currentView = mode;
             document.getElementById('viewGrid').classList.toggle('active', mode === 'grid');
             document.getElementById('viewList').classList.toggle('active', mode === 'list');
@@ -881,32 +914,52 @@
 
         // Fetch videos from storage using proxy
         async function fetchVideosFromStorage() {
+            debugLog('Starting to fetch videos from storage');
+            
             // Show loading state
             document.getElementById('contentContainer').innerHTML = '<div class="videos-' + currentView + '"><div class="loading"><div class="loading-spinner"></div><p>Loading content from Cornfield storage...</p></div></div>';
 
             try {
                 var url = storageEndpoints[currentStorage] + '?action=list&dir=' + encodeURIComponent(currentPath);
-                console.log('Fetching from:', url);
+                debugLog('Fetching from URL: ' + url);
                 
                 var response = await fetch(url);
+                debugLog('Response status: ' + response.status + ' ' + response.statusText);
                 
                 if (!response.ok) {
                     throw new Error('HTTP ' + response.status + ': ' + response.statusText);
                 }
                 
-                var data = await response.json();
+                // Check content type
+                var contentType = response.headers.get('content-type');
+                debugLog('Response content type: ' + contentType);
+                
+                var responseText = await response.text();
+                debugLog('Raw response text (first 500 chars): ' + responseText.substring(0, 500));
+                
+                // Try to parse as JSON
+                var data;
+                try {
+                    data = JSON.parse(responseText);
+                    debugLog('Successfully parsed JSON response');
+                } catch (e) {
+                    debugLog('Failed to parse JSON: ' + e.message);
+                    throw new Error('Invalid JSON response from server: ' + e.message);
+                }
                 
                 if (data.error) {
+                    debugLog('Server returned error: ' + data.error);
                     throw new Error(data.error);
                 }
                 
                 videoData = data.videos || [];
                 filteredVideos = videoData.slice();
                 
-                console.log('Found videos:', videoData.length);
+                debugLog('Found ' + videoData.length + ' items in directory');
                 displayContent(filteredVideos);
                 
             } catch (error) {
+                debugLog('Error fetching content: ' + error.message);
                 console.error('Error fetching content:', error);
                 document.getElementById('contentContainer').innerHTML = '<div class="error"><p>Failed to load content from storage. Please check your connection and try again.</p><p><small>Error: ' + error.message + '</small></p><button class="btn btn-primary" style="margin-top: 1rem;" onclick="fetchVideosFromStorage()">Retry</button></div>';
             }
@@ -914,6 +967,8 @@
 
         // Display content (videos and folders)
         function displayContent(items) {
+            debugLog('Displaying ' + items.length + ' items');
+            
             if (items.length === 0) {
                 document.getElementById('contentContainer').innerHTML = '<div class="videos-' + currentView + '"><div class="loading"><p>No content found in this directory.</p></div></div>';
                 return;
@@ -926,6 +981,8 @@
             // Separate folders and videos
             var folders = items.filter(function(item) { return item.type === 'directory'; });
             var videos = items.filter(function(item) { return item.type === 'video'; });
+            
+            debugLog('Found ' + folders.length + ' folders and ' + videos.length + ' videos');
             
             // Display folders first
             folders.forEach(function(folder) {
@@ -951,14 +1008,14 @@
                 if (currentView === 'grid') {
                     var videoCard = document.createElement('div');
                     videoCard.className = 'video-card';
-                    videoCard.innerHTML = '<div class="thumbnail-container"><img src="https://placehold.co/400x225/333/fff?text=' + encodeURIComponent(video.title) + '" class="thumbnail"><div class="video-duration">' + formatFileSize(video.size) + '</div></div><div class="video-info"><h3 class="video-title">' + video.title + '</h3><div class="video-meta"><span>' + video.extension.toUpperCase() + '</span><span>' + formatDate(video.modified) + '</span></div></div>';
+                    videoCard.innerHTML = '<div class="thumbnail-container"><img src="https://placehold.co/400x225/333/fff?text=' + encodeURIComponent(video.title) + '" class="thumbnail"><div class="video-duration">' + formatFileSize(video.size) + '</div></div><div class="video-info"><h3 class="video-title">' + video.title + '</h3><div class="video-meta"><span>' + (video.extension || 'video').toUpperCase() + '</span><span>' + formatDate(video.modified) + '</span></div></div>';
                     
                     videoCard.addEventListener('click', function() { openVideoPlayer(video); });
                     container.appendChild(videoCard);
                 } else {
                     var listItem = document.createElement('div');
                     listItem.className = 'list-item';
-                    listItem.innerHTML = '<img src="https://placehold.co/160x90/333/fff?text=' + encodeURIComponent(video.title) + '" class="list-thumbnail"><div class="list-info"><h3 class="list-title">' + video.title + '</h3><div class="list-meta"><span>' + formatFileSize(video.size) + '</span><span>' + video.extension.toUpperCase() + '</span><span>' + formatDate(video.modified) + '</span></div></div>';
+                    listItem.innerHTML = '<img src="https://placehold.co/160x90/333/fff?text=' + encodeURIComponent(video.title) + '" class="list-thumbnail"><div class="list-info"><h3 class="list-title">' + video.title + '</h3><div class="list-meta"><span>' + formatFileSize(video.size) + '</span><span>' + (video.extension || 'video').toUpperCase() + '</span><span>' + formatDate(video.modified) + '</span></div></div>';
                     
                     listItem.addEventListener('click', function() { openVideoPlayer(video); });
                     container.appendChild(listItem);
@@ -971,6 +1028,7 @@
 
         // Open video player
         function openVideoPlayer(video) {
+            debugLog('Opening video player for: ' + video.title);
             currentVideo = video;
             
             document.getElementById('videoPlayer').src = video.url;
@@ -984,12 +1042,14 @@
             
             // Try to play the video
             document.getElementById('videoPlayer').play().catch(function(e) {
+                debugLog('Autoplay prevented: ' + e.message);
                 console.log('Autoplay prevented:', e);
             });
         }
 
         // Close video player
         function closeVideoPlayer() {
+            debugLog('Closing video player');
             document.getElementById('videoModal').style.display = 'none';
             document.body.style.overflow = 'auto';
             document.getElementById('videoPlayer').pause();
@@ -1000,6 +1060,7 @@
         // Download video
         function downloadVideo() {
             if (!currentVideo) return;
+            debugLog('Downloading video: ' + currentVideo.filename);
             
             var a = document.createElement('a');
             a.href = currentVideo.url;
@@ -1012,6 +1073,7 @@
         // Share video
         function shareVideo() {
             if (!currentVideo) return;
+            debugLog('Sharing video: ' + currentVideo.title);
             
             if (navigator.share) {
                 navigator.share({
@@ -1029,6 +1091,7 @@
 
         // Search functionality
         function searchVideos(query) {
+            debugLog('Searching for: ' + query);
             if (!query.trim()) {
                 filteredVideos = videoData.slice();
             } else {
@@ -1041,6 +1104,7 @@
 
         // Refresh videos
         function refreshVideos() {
+            debugLog('Refreshing videos');
             fetchVideosFromStorage();
         }
 
@@ -1102,6 +1166,7 @@
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
+            debugLog('DOM Content Loaded - Initializing application');
             updateRecentFolders();
             navigateToDirectory('corn');
         });
