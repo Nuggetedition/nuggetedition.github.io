@@ -741,10 +741,6 @@
             'https://cornfieldstorage2.ct.ws/proxy.php'
         ];
 
-        // Database endpoint
-        const dbEndpoint = 'https://cornfieldstorage.ct.ws/db.php';
-        const apiKey = 'nigger_nigger_nigger_nigger';
-
         // DOM elements
         const videosContainer = document.getElementById('videosContainer');
         const contentContainer = document.getElementById('contentContainer');
@@ -794,192 +790,6 @@
             const id = 'user_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
             localStorage.setItem('cornfield_user_id', id);
             return id;
-        }
-
-        // Database functions
-        async function dbQuery(operation, data = {}) {
-            try {
-                const response = await fetch(dbEndpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
-                    },
-                    body: JSON.stringify({
-                        operation,
-                        ...data
-                    })
-                });
-                
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
-                const result = await response.json();
-                return result;
-            } catch (error) {
-                console.error('Database query failed:', error);
-                return { success: false, message: error.message };
-            }
-        }
-
-        // Initialize database tables
-        async function initDatabase() {
-            // Create videos table if it doesn't exist
-            await dbQuery('create_table', {
-                table: 'videos',
-                data: {
-                    id: 'INT AUTO_INCREMENT PRIMARY KEY',
-                    video_id: 'VARCHAR(255) UNIQUE',
-                    filename: 'VARCHAR(255)',
-                    title: 'VARCHAR(255)',
-                    storage_site: 'INT',
-                    directory: 'VARCHAR(255)',
-                    likes: 'INT DEFAULT 0',
-                    dislikes: 'INT DEFAULT 0',
-                    created_at: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
-                }
-            });
-
-            // Create user_interactions table if it doesn't exist
-            await dbQuery('create_table', {
-                table: 'user_interactions',
-                data: {
-                    id: 'INT AUTO_INCREMENT PRIMARY KEY',
-                    user_id: 'VARCHAR(255)',
-                    video_id: 'VARCHAR(255)',
-                    interaction_type: 'VARCHAR(10)', // 'like' or 'dislike'
-                    created_at: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
-                }
-            });
-        }
-
-        // Get video stats from database
-        async function getVideoStats(videoId) {
-            const result = await dbQuery('select', {
-                table: 'videos',
-                where: { video_id: videoId }
-            });
-            
-            if (result.success && result.data.length > 0) {
-                return result.data[0];
-            }
-            
-            return { likes: 0, dislikes: 0 };
-        }
-
-        // Get user interaction for a video
-        async function getUserInteraction(videoId) {
-            const result = await dbQuery('select', {
-                table: 'user_interactions',
-                where: { 
-                    user_id: userId,
-                    video_id: videoId 
-                }
-            });
-            
-            if (result.success && result.data.length > 0) {
-                return result.data[0].interaction_type;
-            }
-            
-            return null;
-        }
-
-        // Add or update video in database
-        async function updateVideoInDatabase(video) {
-            const videoId = `${currentStorage}-${video.filename}`;
-            
-            const result = await dbQuery('select', {
-                table: 'videos',
-                where: { video_id: videoId }
-            });
-            
-            if (result.success && result.data.length > 0) {
-                // Video exists, update if needed
-                await dbQuery('update', {
-                    table: 'videos',
-                    data: {
-                        filename: video.filename,
-                        title: video.title,
-                        storage_site: currentStorage,
-                        directory: currentPath
-                    },
-                    where: { video_id: videoId }
-                });
-            } else {
-                // Insert new video
-                await dbQuery('insert', {
-                    table: 'videos',
-                    data: {
-                        video_id: videoId,
-                        filename: video.filename,
-                        title: video.title,
-                        storage_site: currentStorage,
-                        directory: currentPath
-                    }
-                });
-            }
-        }
-
-        // Record user interaction
-        async function recordInteraction(videoId, interactionType) {
-            // Remove any existing interaction
-            await dbQuery('delete', {
-                table: 'user_interactions',
-                where: { 
-                    user_id: userId,
-                    video_id: videoId 
-                }
-            });
-            
-            // Add new interaction
-            await dbQuery('insert', {
-                table: 'user_interactions',
-                data: {
-                    user_id: userId,
-                    video_id: videoId,
-                    interaction_type: interactionType
-                }
-            });
-            
-            // Update video stats
-            const currentStats = await getVideoStats(videoId);
-            const likes = interactionType === 'like' ? currentStats.likes + 1 : currentStats.likes;
-            const dislikes = interactionType === 'dislike' ? currentStats.dislikes + 1 : currentStats.dislikes;
-            
-            await dbQuery('update', {
-                table: 'videos',
-                data: { likes, dislikes },
-                where: { video_id: videoId }
-            });
-        }
-
-        // Remove user interaction
-        async function removeInteraction(videoId) {
-            await dbQuery('delete', {
-                table: 'user_interactions',
-                where: { 
-                    user_id: userId,
-                    video_id: videoId 
-                }
-            });
-            
-            // Update video stats
-            const currentStats = await getVideoStats(videoId);
-            const userInteraction = await getUserInteraction(videoId);
-            
-            let likes = currentStats.likes;
-            let dislikes = currentStats.dislikes;
-            
-            if (userInteraction === 'like') {
-                likes = Math.max(0, likes - 1);
-            } else if (userInteraction === 'dislike') {
-                dislikes = Math.max(0, dislikes - 1);
-            }
-            
-            await dbQuery('update', {
-                table: 'videos',
-                data: { likes, dislikes },
-                where: { video_id: videoId }
-            });
         }
 
         // Format file size
@@ -1109,16 +919,20 @@
                 <div class="videos-${currentView}">
                     <div class="loading">
                         <div class="loading-spinner"></div>
-                        <p>Loading content from ${storageEndpoints[currentStorage]}...</p>
+                        <p>Loading content from Cornfield storage...</p>
                     </div>
                 </div>
             `;
 
             try {
                 const url = `${storageEndpoints[currentStorage]}?action=list&dir=${encodeURIComponent(currentPath)}`;
+                console.log('Fetching from:', url);
+                
                 const response = await fetch(url);
                 
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
                 
                 const data = await response.json();
                 
@@ -1129,21 +943,19 @@
                 videoData = data.videos || [];
                 filteredVideos = [...videoData];
                 
-                // Initialize database and update video records
-                await initDatabase();
-                for (const video of videoData) {
-                    if (video.type === 'video') {
-                        await updateVideoInDatabase(video);
-                    }
-                }
-                
+                console.log(`Found ${videoData.length} items`);
                 displayContent(filteredVideos);
                 
             } catch (error) {
                 console.error('Error fetching content:', error);
                 contentContainer.innerHTML = `
                     <div class="error">
-                        <p>Failed to load content from storage. Please check your connection and try again.</p>
+                        <p>Failed to load content from storage. Please check:</p>
+                        <ul style="text-align: left; margin: 1rem 0;">
+                            <li>Your internet connection</li>
+                            <li>That proxy.php is installed on the storage site</li>
+                            <li>That the storage site is accessible</li>
+                        </ul>
                         <p><small>Error: ${error.message}</small></p>
                         <button class="btn btn-primary" style="margin-top: 1rem;" onclick="fetchVideosFromStorage()">Retry</button>
                     </div>
@@ -1152,12 +964,13 @@
         }
 
         // Display content (videos and folders)
-        async function displayContent(items) {
+        function displayContent(items) {
             if (items.length === 0) {
                 contentContainer.innerHTML = `
                     <div class="videos-${currentView}">
                         <div class="loading">
                             <p>No content found in this directory.</p>
+                            <p><small>Make sure you have video files in the /corn/ directory on your storage site.</small></p>
                         </div>
                     </div>
                 `;
@@ -1212,11 +1025,10 @@
                 }
             });
             
-            // Then display videos with database stats
-            for (const video of videos) {
+            // Then display videos
+            videos.forEach(video => {
                 const videoId = `${currentStorage}-${video.filename}`;
-                const stats = await getVideoStats(videoId);
-                const userInteraction = await getUserInteraction(videoId);
+                const userInteraction = userInteractions[videoId] || null;
                 
                 if (currentView === 'grid') {
                     const videoCard = document.createElement('div');
@@ -1233,8 +1045,8 @@
                                 <span>${formatDate(video.modified)}</span>
                             </div>
                             <div class="video-meta">
-                                <span>👍 ${stats.likes || 0}</span>
-                                <span>👎 ${stats.dislikes || 0}</span>
+                                <span>👍 ${video.likes || 0}</span>
+                                <span>👎 ${video.dislikes || 0}</span>
                             </div>
                         </div>
                     `;
@@ -1254,8 +1066,8 @@
                                 <span>${formatDate(video.modified)}</span>
                             </div>
                             <div class="list-meta">
-                                <span>👍 ${stats.likes || 0}</span>
-                                <span>👎 ${stats.dislikes || 0}</span>
+                                <span>👍 ${video.likes || 0}</span>
+                                <span>👎 ${video.dislikes || 0}</span>
                             </div>
                         </div>
                     `;
@@ -1263,26 +1075,25 @@
                     listItem.addEventListener('click', () => openVideoPlayer(video));
                     container.appendChild(listItem);
                 }
-            }
+            });
             
             contentContainer.innerHTML = '';
             contentContainer.appendChild(container);
         }
 
         // Open video player
-        async function openVideoPlayer(video) {
+        function openVideoPlayer(video) {
             currentVideo = video;
             const videoId = `${currentStorage}-${video.filename}`;
-            const stats = await getVideoStats(videoId);
-            const userInteraction = await getUserInteraction(videoId);
+            const userInteraction = userInteractions[videoId] || null;
             
             videoPlayer.src = video.url;
             videoTitle.textContent = video.title;
             videoSize.textContent = formatFileSize(video.size);
             videoDate.textContent = formatDate(video.modified);
             videoStorage.textContent = storageEndpoints[currentStorage].split('/')[2];
-            likeCount.textContent = stats.likes || 0;
-            dislikeCount.textContent = stats.dislikes || 0;
+            likeCount.textContent = video.likes || 0;
+            dislikeCount.textContent = video.dislikes || 0;
             
             // Update button states based on user interaction
             likeButton.classList.toggle('active', userInteraction === 'like');
@@ -1307,52 +1118,66 @@
         }
 
         // Like video
-        async function likeVideo() {
+        function likeVideo() {
             if (!currentVideo) return;
             
             const videoId = `${currentStorage}-${currentVideo.filename}`;
-            const userInteraction = await getUserInteraction(videoId);
+            const userInteraction = userInteractions[videoId];
             
             if (userInteraction === 'like') {
                 // Remove like
-                await removeInteraction(videoId);
+                userInteractions[videoId] = null;
+                currentVideo.likes = Math.max(0, (currentVideo.likes || 0) - 1);
                 likeButton.classList.remove('active');
             } else {
                 // Add like, remove dislike if exists
-                await recordInteraction(videoId, 'like');
+                userInteractions[videoId] = 'like';
+                if (userInteraction === 'dislike') {
+                    currentVideo.dislikes = Math.max(0, (currentVideo.dislikes || 0) - 1);
+                    dislikeButton.classList.remove('active');
+                }
+                currentVideo.likes = (currentVideo.likes || 0) + 1;
                 likeButton.classList.add('active');
-                dislikeButton.classList.remove('active');
             }
             
-            const stats = await getVideoStats(videoId);
-            likeCount.textContent = stats.likes || 0;
-            dislikeCount.textContent = stats.dislikes || 0;
+            likeCount.textContent = currentVideo.likes || 0;
+            dislikeCount.textContent = currentVideo.dislikes || 0;
+            
+            // Save to localStorage
+            localStorage.setItem('cornfield_user_interactions', JSON.stringify(userInteractions));
             
             // Update the display
             displayContent(filteredVideos);
         }
 
         // Dislike video
-        async function dislikeVideo() {
+        function dislikeVideo() {
             if (!currentVideo) return;
             
             const videoId = `${currentStorage}-${currentVideo.filename}`;
-            const userInteraction = await getUserInteraction(videoId);
+            const userInteraction = userInteractions[videoId];
             
             if (userInteraction === 'dislike') {
                 // Remove dislike
-                await removeInteraction(videoId);
+                userInteractions[videoId] = null;
+                currentVideo.dislikes = Math.max(0, (currentVideo.dislikes || 0) - 1);
                 dislikeButton.classList.remove('active');
             } else {
                 // Add dislike, remove like if exists
-                await recordInteraction(videoId, 'dislike');
+                userInteractions[videoId] = 'dislike';
+                if (userInteraction === 'like') {
+                    currentVideo.likes = Math.max(0, (currentVideo.likes || 0) - 1);
+                    likeButton.classList.remove('active');
+                }
+                currentVideo.dislikes = (currentVideo.dislikes || 0) + 1;
                 dislikeButton.classList.add('active');
-                likeButton.classList.remove('active');
             }
             
-            const stats = await getVideoStats(videoId);
-            likeCount.textContent = stats.likes || 0;
-            dislikeCount.textContent = stats.dislikes || 0;
+            likeCount.textContent = currentVideo.likes || 0;
+            dislikeCount.textContent = currentVideo.dislikes || 0;
+            
+            // Save to localStorage
+            localStorage.setItem('cornfield_user_interactions', JSON.stringify(userInteractions));
             
             // Update the display
             displayContent(filteredVideos);
