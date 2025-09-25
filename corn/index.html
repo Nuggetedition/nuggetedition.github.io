@@ -15,6 +15,7 @@
             --accent: #ff8c5a;
             --success: #4caf50;
             --error: #f44336;
+            --folder-color: #ffa726;
         }
 
         * {
@@ -189,10 +190,31 @@
             color: var(--primary);
         }
 
-        .sidebar-item i {
-            font-size: 1.3rem;
-            width: 24px;
-            text-align: center;
+        .breadcrumb {
+            padding: 1rem 2rem;
+            background: var(--darker-bg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .breadcrumb-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: color 0.2s ease;
+        }
+
+        .breadcrumb-item:hover {
+            color: var(--primary);
+        }
+
+        .breadcrumb-separator {
+            margin: 0 0.5rem;
+            color: var(--text-secondary);
         }
 
         /* Content Area */
@@ -214,6 +236,12 @@
             font-weight: 700;
         }
 
+        .current-directory {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-top: 0.5rem;
+        }
+
         .view-options {
             display: flex;
             gap: 0.5rem;
@@ -232,14 +260,20 @@
             color: var(--dark-bg);
         }
 
-        /* Video Grid */
+        /* Videos Grid */
         .videos-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 1.5rem;
         }
 
-        .video-card {
+        .videos-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .video-card, .folder-card, .list-item {
             background: var(--card-bg);
             border-radius: 12px;
             overflow: hidden;
@@ -248,9 +282,38 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
-        .video-card:hover {
-            transform: translateY(-8px);
+        .video-card:hover, .folder-card:hover, .list-item:hover {
+            transform: translateY(-5px);
             box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .folder-card, .list-item.folder {
+            border-left: 4px solid var(--folder-color);
+        }
+
+        .list-item {
+            display: flex;
+            padding: 1rem;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .list-thumbnail {
+            width: 120px;
+            height: 68px;
+            object-fit: cover;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .list-info {
+            flex: 1;
+        }
+
+        .list-folder-icon {
+            font-size: 2.5rem;
+            color: var(--folder-color);
+            margin-right: 1rem;
         }
 
         .thumbnail-container {
@@ -273,7 +336,17 @@
             transform: scale(1.05);
         }
 
-        .video-duration {
+        .folder-icon {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            color: var(--folder-color);
+            opacity: 0.7;
+        }
+
+        .video-duration, .folder-badge {
             position: absolute;
             bottom: 10px;
             right: 10px;
@@ -284,11 +357,16 @@
             font-size: 0.8rem;
         }
 
-        .video-info {
+        .folder-badge {
+            background: var(--folder-color);
+            color: var(--dark-bg);
+        }
+
+        .video-info, .folder-info {
             padding: 1rem;
         }
 
-        .video-title {
+        .video-title, .folder-title, .list-title {
             font-weight: 600;
             margin-bottom: 0.5rem;
             display: -webkit-box;
@@ -298,11 +376,21 @@
             line-height: 1.3;
         }
 
-        .video-meta {
+        .list-title {
+            margin-bottom: 0.2rem;
+            -webkit-line-clamp: 1;
+        }
+
+        .video-meta, .folder-meta, .list-meta {
             color: var(--text-secondary);
             font-size: 0.9rem;
             display: flex;
             justify-content: space-between;
+        }
+
+        .list-meta {
+            justify-content: flex-start;
+            gap: 1rem;
         }
 
         /* Video Player Modal */
@@ -390,6 +478,11 @@
             background: rgba(255, 255, 255, 0.2);
         }
 
+        .action-btn.active {
+            background: var(--primary);
+            color: var(--dark-bg);
+        }
+
         .close-modal {
             position: absolute;
             top: 20px;
@@ -472,6 +565,16 @@
                 align-items: flex-start;
                 gap: 1rem;
             }
+            
+            .list-item {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .list-thumbnail {
+                width: 100%;
+                height: 150px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -522,83 +625,83 @@
 </head>
 <body>
     <header>
-        <a href="#" class="logo">
+        <a href="#" class="logo" id="homeLink">
             <span class="logo-icon">🌽</span>
             <span>Cornfield</span>
         </a>
         <div class="search-container">
-            <input type="text" class="search-box" placeholder="Search for videos...">
-            <button class="search-btn">🔍</button>
+            <input type="text" class="search-box" placeholder="Search for videos..." id="searchInput">
+            <button class="search-btn" id="searchButton">🔍</button>
         </div>
         <div class="user-actions">
-            <button class="btn">
-                <span>📤</span> Upload
-            </button>
-            <button class="btn btn-primary">
-                <span>👤</span> Sign In
+            <button class="btn" id="refreshButton">
+                <span>🔄</span> Refresh
             </button>
         </div>
     </header>
 
+    <div class="breadcrumb" id="breadcrumb">
+        <div class="breadcrumb-item" id="homeBreadcrumb">
+            <span>🏠</span> Home
+        </div>
+    </div>
+
     <div class="app-container">
         <aside class="sidebar">
             <div class="sidebar-section">
-                <div class="sidebar-item active">
+                <div class="sidebar-item active" id="sidebarHome">
                     <span>🏠</span> Home
                 </div>
-                <div class="sidebar-item">
-                    <span>🔥</span> Trending
-                </div>
-                <div class="sidebar-item">
-                    <span>📺</span> Subscriptions
+                <div class="sidebar-item" id="sidebarCorn">
+                    <span>📁</span> Corn Directory
                 </div>
             </div>
             
             <div class="sidebar-section">
-                <div class="sidebar-title">Library</div>
-                <div class="sidebar-item">
-                    <span>📚</span> Your Videos
-                </div>
-                <div class="sidebar-item">
-                    <span>⏱️</span> Watch History
-                </div>
-                <div class="sidebar-item">
-                    <span>👍</span> Liked Videos
-                </div>
-            </div>
-            
-            <div class="sidebar-section">
-                <div class="sidebar-title">Storage</div>
-                <div class="sidebar-item">
+                <div class="sidebar-title">Storage Sites</div>
+                <div class="sidebar-item active" data-storage="0" id="storage0">
                     <span>🌽</span> Cornfield Storage
                 </div>
-                <div class="sidebar-item">
+                <div class="sidebar-item" data-storage="1" id="storage1">
                     <span>🌽</span> Cornfield Storage 1
                 </div>
-                <div class="sidebar-item">
+                <div class="sidebar-item" data-storage="2" id="storage2">
                     <span>🌽</span> Cornfield Storage 2
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">Recent Folders</div>
+                <div id="recentFolders">
+                    <!-- Dynamically populated -->
                 </div>
             </div>
         </aside>
 
         <main class="content">
             <div class="section-header">
-                <h2 class="section-title">All Videos</h2>
+                <div>
+                    <h2 class="section-title" id="contentTitle">All Videos</h2>
+                    <div class="current-directory" id="currentDirectory">/</div>
+                </div>
                 <div class="view-options">
-                    <span class="view-option active">Grid</span>
-                    <span class="view-option">List</span>
+                    <span class="view-option active" id="viewGrid">Grid</span>
+                    <span class="view-option" id="viewList">List</span>
                 </div>
             </div>
 
-            <div class="videos-grid" id="videosContainer">
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    <p>Loading videos from Cornfield storage...</p>
+            <div id="contentContainer">
+                <div class="videos-grid" id="videosContainer">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading content from Cornfield storage...</p>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- Video Player Modal -->
     <div class="modal" id="videoModal">
         <button class="close-modal" id="closeModal">&times;</button>
         <div class="modal-content">
@@ -610,18 +713,19 @@
                 <div class="video-player-meta">
                     <span id="videoSize">0 MB</span>
                     <span id="videoDate">Unknown date</span>
+                    <span id="videoStorage">Unknown storage</span>
                 </div>
                 <div class="video-actions">
-                    <button class="action-btn">
-                        <span>👍</span> Like
+                    <button class="action-btn" id="likeButton">
+                        <span>👍</span> <span id="likeCount">0</span>
                     </button>
-                    <button class="action-btn">
-                        <span>👎</span> Dislike
+                    <button class="action-btn" id="dislikeButton">
+                        <span>👎</span> <span id="dislikeCount">0</span>
                     </button>
-                    <button class="action-btn">
-                        <span>💬</span> Comment
+                    <button class="action-btn" id="downloadButton">
+                        <span>📥</span> Download
                     </button>
-                    <button class="action-btn">
+                    <button class="action-btn" id="shareButton">
                         <span>📤</span> Share
                     </button>
                 </div>
@@ -632,25 +736,251 @@
     <script>
         // Storage endpoints with proxy
         const storageEndpoints = [
-            'https://cornfieldstorage.ct.ws/proxy.php' //,
-            // 'https://cornfieldstorage1.ct.ws/proxy.php',
-            // 'https://cornfieldstorage2.ct.ws/proxy.php'
+            'https://cornfieldstorage.ct.ws/proxy.php',
+            'https://cornfieldstorage1.ct.ws/proxy.php',
+            'https://cornfieldstorage2.ct.ws/proxy.php'
         ];
+
+        // Database endpoint
+        const dbEndpoint = 'https://cornfieldstorage.ct.ws/db.php';
+        const apiKey = 'nigger_nigger_nigger_nigger';
 
         // DOM elements
         const videosContainer = document.getElementById('videosContainer');
+        const contentContainer = document.getElementById('contentContainer');
         const videoModal = document.getElementById('videoModal');
         const videoPlayer = document.getElementById('videoPlayer');
         const videoTitle = document.getElementById('videoTitle');
         const videoSize = document.getElementById('videoSize');
         const videoDate = document.getElementById('videoDate');
+        const videoStorage = document.getElementById('videoStorage');
         const closeModal = document.getElementById('closeModal');
-        const searchBox = document.querySelector('.search-box');
-        const searchBtn = document.querySelector('.search-btn');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const breadcrumb = document.getElementById('breadcrumb');
+        const contentTitle = document.getElementById('contentTitle');
+        const currentDirectory = document.getElementById('currentDirectory');
+        const homeLink = document.getElementById('homeLink');
+        const homeBreadcrumb = document.getElementById('homeBreadcrumb');
+        const recentFolders = document.getElementById('recentFolders');
+        const refreshButton = document.getElementById('refreshButton');
+        const sidebarHome = document.getElementById('sidebarHome');
+        const sidebarCorn = document.getElementById('sidebarCorn');
+        const storage0 = document.getElementById('storage0');
+        const storage1 = document.getElementById('storage1');
+        const storage2 = document.getElementById('storage2');
+        const viewGrid = document.getElementById('viewGrid');
+        const viewList = document.getElementById('viewList');
+        const likeButton = document.getElementById('likeButton');
+        const dislikeButton = document.getElementById('dislikeButton');
+        const likeCount = document.getElementById('likeCount');
+        const dislikeCount = document.getElementById('dislikeCount');
+        const downloadButton = document.getElementById('downloadButton');
+        const shareButton = document.getElementById('shareButton');
 
-        // Video data cache
+        // App state
+        let currentStorage = 0;
+        let currentPath = 'corn';
         let videoData = [];
         let filteredVideos = [];
+        let recentPaths = JSON.parse(localStorage.getItem('cornfield_recent_paths') || '[]');
+        let currentView = 'grid'; // 'grid' or 'list'
+        let currentVideo = null;
+        let userInteractions = JSON.parse(localStorage.getItem('cornfield_user_interactions') || '{}');
+        let userId = localStorage.getItem('cornfield_user_id') || generateUserId();
+
+        // Generate unique user ID
+        function generateUserId() {
+            const id = 'user_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+            localStorage.setItem('cornfield_user_id', id);
+            return id;
+        }
+
+        // Database functions
+        async function dbQuery(operation, data = {}) {
+            try {
+                const response = await fetch(dbEndpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        operation,
+                        ...data
+                    })
+                });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('Database query failed:', error);
+                return { success: false, message: error.message };
+            }
+        }
+
+        // Initialize database tables
+        async function initDatabase() {
+            // Create videos table if it doesn't exist
+            await dbQuery('create_table', {
+                table: 'videos',
+                data: {
+                    id: 'INT AUTO_INCREMENT PRIMARY KEY',
+                    video_id: 'VARCHAR(255) UNIQUE',
+                    filename: 'VARCHAR(255)',
+                    title: 'VARCHAR(255)',
+                    storage_site: 'INT',
+                    directory: 'VARCHAR(255)',
+                    likes: 'INT DEFAULT 0',
+                    dislikes: 'INT DEFAULT 0',
+                    created_at: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+                }
+            });
+
+            // Create user_interactions table if it doesn't exist
+            await dbQuery('create_table', {
+                table: 'user_interactions',
+                data: {
+                    id: 'INT AUTO_INCREMENT PRIMARY KEY',
+                    user_id: 'VARCHAR(255)',
+                    video_id: 'VARCHAR(255)',
+                    interaction_type: 'VARCHAR(10)', // 'like' or 'dislike'
+                    created_at: 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'
+                }
+            });
+        }
+
+        // Get video stats from database
+        async function getVideoStats(videoId) {
+            const result = await dbQuery('select', {
+                table: 'videos',
+                where: { video_id: videoId }
+            });
+            
+            if (result.success && result.data.length > 0) {
+                return result.data[0];
+            }
+            
+            return { likes: 0, dislikes: 0 };
+        }
+
+        // Get user interaction for a video
+        async function getUserInteraction(videoId) {
+            const result = await dbQuery('select', {
+                table: 'user_interactions',
+                where: { 
+                    user_id: userId,
+                    video_id: videoId 
+                }
+            });
+            
+            if (result.success && result.data.length > 0) {
+                return result.data[0].interaction_type;
+            }
+            
+            return null;
+        }
+
+        // Add or update video in database
+        async function updateVideoInDatabase(video) {
+            const videoId = `${currentStorage}-${video.filename}`;
+            
+            const result = await dbQuery('select', {
+                table: 'videos',
+                where: { video_id: videoId }
+            });
+            
+            if (result.success && result.data.length > 0) {
+                // Video exists, update if needed
+                await dbQuery('update', {
+                    table: 'videos',
+                    data: {
+                        filename: video.filename,
+                        title: video.title,
+                        storage_site: currentStorage,
+                        directory: currentPath
+                    },
+                    where: { video_id: videoId }
+                });
+            } else {
+                // Insert new video
+                await dbQuery('insert', {
+                    table: 'videos',
+                    data: {
+                        video_id: videoId,
+                        filename: video.filename,
+                        title: video.title,
+                        storage_site: currentStorage,
+                        directory: currentPath
+                    }
+                });
+            }
+        }
+
+        // Record user interaction
+        async function recordInteraction(videoId, interactionType) {
+            // Remove any existing interaction
+            await dbQuery('delete', {
+                table: 'user_interactions',
+                where: { 
+                    user_id: userId,
+                    video_id: videoId 
+                }
+            });
+            
+            // Add new interaction
+            await dbQuery('insert', {
+                table: 'user_interactions',
+                data: {
+                    user_id: userId,
+                    video_id: videoId,
+                    interaction_type: interactionType
+                }
+            });
+            
+            // Update video stats
+            const currentStats = await getVideoStats(videoId);
+            const likes = interactionType === 'like' ? currentStats.likes + 1 : currentStats.likes;
+            const dislikes = interactionType === 'dislike' ? currentStats.dislikes + 1 : currentStats.dislikes;
+            
+            await dbQuery('update', {
+                table: 'videos',
+                data: { likes, dislikes },
+                where: { video_id: videoId }
+            });
+        }
+
+        // Remove user interaction
+        async function removeInteraction(videoId) {
+            await dbQuery('delete', {
+                table: 'user_interactions',
+                where: { 
+                    user_id: userId,
+                    video_id: videoId 
+                }
+            });
+            
+            // Update video stats
+            const currentStats = await getVideoStats(videoId);
+            const userInteraction = await getUserInteraction(videoId);
+            
+            let likes = currentStats.likes;
+            let dislikes = currentStats.dislikes;
+            
+            if (userInteraction === 'like') {
+                likes = Math.max(0, likes - 1);
+            } else if (userInteraction === 'dislike') {
+                dislikes = Math.max(0, dislikes - 1);
+            }
+            
+            await dbQuery('update', {
+                table: 'videos',
+                data: { likes, dislikes },
+                where: { video_id: videoId }
+            });
+        }
 
         // Format file size
         function formatFileSize(bytes) {
@@ -664,98 +994,300 @@
         // Format date
         function formatDate(timestamp) {
             const date = new Date(timestamp * 1000);
-            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 1) return 'Yesterday';
+            if (diffDays < 7) return `${diffDays} days ago`;
+            if (diffDays < 30) return `${Math.floor(diffDays/7)} weeks ago`;
+            if (diffDays < 365) return `${Math.floor(diffDays/30)} months ago`;
+            return `${Math.floor(diffDays/365)} years ago`;
+        }
+
+        // Add path to recent folders
+        function addToRecentPaths(path) {
+            if (!path) return;
+            
+            recentPaths = recentPaths.filter(p => p !== path);
+            recentPaths.unshift(path);
+            recentPaths = recentPaths.slice(0, 5);
+            
+            localStorage.setItem('cornfield_recent_paths', JSON.stringify(recentPaths));
+            updateRecentFolders();
+        }
+
+        // Update recent folders sidebar
+        function updateRecentFolders() {
+            recentFolders.innerHTML = '';
+            
+            if (recentPaths.length === 0) {
+                recentFolders.innerHTML = '<div class="sidebar-item"><span>📁</span> No recent folders</div>';
+                return;
+            }
+            
+            recentPaths.forEach(path => {
+                const folderItem = document.createElement('div');
+                folderItem.className = 'sidebar-item';
+                folderItem.innerHTML = `<span>📁</span> ${path.split('/').pop() || 'Root'}`;
+                folderItem.onclick = () => navigateToDirectory(path);
+                recentFolders.appendChild(folderItem);
+            });
+        }
+
+        // Update breadcrumb
+        function updateBreadcrumb(path) {
+            breadcrumb.innerHTML = '';
+            
+            const parts = path ? path.split('/') : [];
+            let currentPath = '';
+            
+            // Home breadcrumb
+            const homeItem = document.createElement('div');
+            homeItem.className = 'breadcrumb-item';
+            homeItem.innerHTML = '<span>🏠</span> Home';
+            homeItem.onclick = () => navigateToDirectory('');
+            breadcrumb.appendChild(homeItem);
+            
+            // Path parts
+            parts.forEach(part => {
+                if (!part) return;
+                
+                currentPath += (currentPath ? '/' : '') + part;
+                const separator = document.createElement('span');
+                separator.className = 'breadcrumb-separator';
+                separator.textContent = '/';
+                breadcrumb.appendChild(separator);
+                
+                const partItem = document.createElement('div');
+                partItem.className = 'breadcrumb-item';
+                partItem.innerHTML = `<span>📁</span> ${part}`;
+                partItem.onclick = () => navigateToDirectory(currentPath);
+                breadcrumb.appendChild(partItem);
+            });
+        }
+
+        // Navigate to directory
+        function navigateToDirectory(path) {
+            currentPath = path;
+            addToRecentPaths(path);
+            updateBreadcrumb(path);
+            currentDirectory.textContent = path ? `/${path}` : '/';
+            contentTitle.textContent = path ? `Folder: ${path.split('/').pop()}` : 'All Videos';
+            
+            // Update sidebar active states
+            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+            if (path === 'corn') {
+                sidebarCorn.classList.add('active');
+            } else if (!path) {
+                sidebarHome.classList.add('active');
+            }
+            
+            fetchVideosFromStorage();
+        }
+
+        // Change storage
+        function changeStorage(index) {
+            currentStorage = index;
+            document.querySelectorAll('.sidebar-item[data-storage]').forEach(item => item.classList.remove('active'));
+            document.querySelector(`.sidebar-item[data-storage="${index}"]`).classList.add('active');
+            navigateToDirectory(currentPath);
+        }
+
+        // Change view mode
+        function changeViewMode(mode) {
+            currentView = mode;
+            viewGrid.classList.toggle('active', mode === 'grid');
+            viewList.classList.toggle('active', mode === 'list');
+            displayContent(filteredVideos);
         }
 
         // Fetch videos from storage using proxy
         async function fetchVideosFromStorage() {
             // Show loading state
-            videosContainer.innerHTML = `
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    <p>Scanning Cornfield storage for videos...</p>
+            contentContainer.innerHTML = `
+                <div class="videos-${currentView}">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading content from ${storageEndpoints[currentStorage]}...</p>
+                    </div>
                 </div>
             `;
 
             try {
-                const allVideos = [];
+                const url = `${storageEndpoints[currentStorage]}?action=list&dir=${encodeURIComponent(currentPath)}`;
+                const response = await fetch(url);
                 
-                // Fetch from each storage endpoint
-                for (let i = 0; i < storageEndpoints.length; i++) {
-                    try {
-                        const response = await fetch(`${storageEndpoints[i]}?action=list`);
-                        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                        
-                        const data = await response.json();
-                        if (data.videos && Array.isArray(data.videos)) {
-                            // Add storage source to each video
-                            data.videos.forEach(video => {
-                                video.storage = `Cornfield Storage ${i+1}`;
-                                video.id = `${i}-${video.filename}`;
-                            });
-                            allVideos.push(...data.videos);
-                        }
-                    } catch (error) {
-                        console.error(`Error fetching from ${storageEndpoints[i]}:`, error);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                videoData = data.videos || [];
+                filteredVideos = [...videoData];
+                
+                // Initialize database and update video records
+                await initDatabase();
+                for (const video of videoData) {
+                    if (video.type === 'video') {
+                        await updateVideoInDatabase(video);
                     }
                 }
-
-                videoData = allVideos;
-                filteredVideos = [...videoData];
-                displayVideos(filteredVideos);
+                
+                displayContent(filteredVideos);
                 
             } catch (error) {
-                console.error('Error fetching videos:', error);
-                videosContainer.innerHTML = `
+                console.error('Error fetching content:', error);
+                contentContainer.innerHTML = `
                     <div class="error">
-                        <p>Failed to load videos from storage. Please check your connection and try again.</p>
+                        <p>Failed to load content from storage. Please check your connection and try again.</p>
+                        <p><small>Error: ${error.message}</small></p>
                         <button class="btn btn-primary" style="margin-top: 1rem;" onclick="fetchVideosFromStorage()">Retry</button>
                     </div>
                 `;
             }
         }
 
-        // Display videos in grid
-        function displayVideos(videos) {
-            if (videos.length === 0) {
-                videosContainer.innerHTML = `
-                    <div class="loading">
-                        <p>No videos found matching your search.</p>
+        // Display content (videos and folders)
+        async function displayContent(items) {
+            if (items.length === 0) {
+                contentContainer.innerHTML = `
+                    <div class="videos-${currentView}">
+                        <div class="loading">
+                            <p>No content found in this directory.</p>
+                        </div>
                     </div>
                 `;
                 return;
             }
             
-            videosContainer.innerHTML = '';
+            const container = document.createElement('div');
+            container.className = `videos-${currentView}`;
+            container.id = 'videosContainer';
             
-            videos.forEach(video => {
-                const videoCard = document.createElement('div');
-                videoCard.className = 'video-card';
-                videoCard.innerHTML = `
-                    <div class="thumbnail-container">
-                        <img src="https://placehold.co/400x225/333/fff?text=${encodeURIComponent(video.title)}" class="thumbnail">
-                        <div class="video-duration">${formatFileSize(video.size)}</div>
-                    </div>
-                    <div class="video-info">
-                        <h3 class="video-title">${video.title}</h3>
-                        <div class="video-meta">
-                            <span>${video.storage}</span>
-                            <span>${formatDate(video.modified)}</span>
+            // Separate folders and videos
+            const folders = items.filter(item => item.type === 'directory');
+            const videos = items.filter(item => item.type === 'video');
+            
+            // Display folders first
+            folders.forEach(folder => {
+                if (currentView === 'grid') {
+                    const folderCard = document.createElement('div');
+                    folderCard.className = 'folder-card';
+                    folderCard.innerHTML = `
+                        <div class="thumbnail-container">
+                            <div class="folder-icon">📁</div>
+                            <div class="folder-badge">Folder</div>
                         </div>
-                    </div>
-                `;
-                
-                videoCard.addEventListener('click', () => openVideoPlayer(video));
-                videosContainer.appendChild(videoCard);
+                        <div class="folder-info">
+                            <h3 class="folder-title">${folder.name}</h3>
+                            <div class="folder-meta">
+                                <span>Directory</span>
+                                <span>Click to open</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    folderCard.addEventListener('click', () => navigateToDirectory(folder.path));
+                    container.appendChild(folderCard);
+                } else {
+                    const listItem = document.createElement('div');
+                    listItem.className = 'list-item folder';
+                    listItem.innerHTML = `
+                        <div class="list-folder-icon">📁</div>
+                        <div class="list-info">
+                            <h3 class="list-title">${folder.name}</h3>
+                            <div class="list-meta">
+                                <span>Folder</span>
+                                <span>Click to open</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    listItem.addEventListener('click', () => navigateToDirectory(folder.path));
+                    container.appendChild(listItem);
+                }
             });
+            
+            // Then display videos with database stats
+            for (const video of videos) {
+                const videoId = `${currentStorage}-${video.filename}`;
+                const stats = await getVideoStats(videoId);
+                const userInteraction = await getUserInteraction(videoId);
+                
+                if (currentView === 'grid') {
+                    const videoCard = document.createElement('div');
+                    videoCard.className = 'video-card';
+                    videoCard.innerHTML = `
+                        <div class="thumbnail-container">
+                            <img src="https://placehold.co/400x225/333/fff?text=${encodeURIComponent(video.title)}" class="thumbnail">
+                            <div class="video-duration">${formatFileSize(video.size)}</div>
+                        </div>
+                        <div class="video-info">
+                            <h3 class="video-title">${video.title}</h3>
+                            <div class="video-meta">
+                                <span>${video.extension.toUpperCase()}</span>
+                                <span>${formatDate(video.modified)}</span>
+                            </div>
+                            <div class="video-meta">
+                                <span>👍 ${stats.likes || 0}</span>
+                                <span>👎 ${stats.dislikes || 0}</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    videoCard.addEventListener('click', () => openVideoPlayer(video));
+                    container.appendChild(videoCard);
+                } else {
+                    const listItem = document.createElement('div');
+                    listItem.className = 'list-item';
+                    listItem.innerHTML = `
+                        <img src="https://placehold.co/160x90/333/fff?text=${encodeURIComponent(video.title)}" class="list-thumbnail">
+                        <div class="list-info">
+                            <h3 class="list-title">${video.title}</h3>
+                            <div class="list-meta">
+                                <span>${formatFileSize(video.size)}</span>
+                                <span>${video.extension.toUpperCase()}</span>
+                                <span>${formatDate(video.modified)}</span>
+                            </div>
+                            <div class="list-meta">
+                                <span>👍 ${stats.likes || 0}</span>
+                                <span>👎 ${stats.dislikes || 0}</span>
+                            </div>
+                        </div>
+                    `;
+                    
+                    listItem.addEventListener('click', () => openVideoPlayer(video));
+                    container.appendChild(listItem);
+                }
+            }
+            
+            contentContainer.innerHTML = '';
+            contentContainer.appendChild(container);
         }
 
         // Open video player
-        function openVideoPlayer(video) {
+        async function openVideoPlayer(video) {
+            currentVideo = video;
+            const videoId = `${currentStorage}-${video.filename}`;
+            const stats = await getVideoStats(videoId);
+            const userInteraction = await getUserInteraction(videoId);
+            
             videoPlayer.src = video.url;
             videoTitle.textContent = video.title;
             videoSize.textContent = formatFileSize(video.size);
             videoDate.textContent = formatDate(video.modified);
+            videoStorage.textContent = storageEndpoints[currentStorage].split('/')[2];
+            likeCount.textContent = stats.likes || 0;
+            dislikeCount.textContent = stats.dislikes || 0;
+            
+            // Update button states based on user interaction
+            likeButton.classList.toggle('active', userInteraction === 'like');
+            dislikeButton.classList.toggle('active', userInteraction === 'dislike');
+            
             videoModal.style.display = 'flex';
             document.body.style.overflow = 'hidden';
             
@@ -771,6 +1303,89 @@
             document.body.style.overflow = 'auto';
             videoPlayer.pause();
             videoPlayer.currentTime = 0;
+            currentVideo = null;
+        }
+
+        // Like video
+        async function likeVideo() {
+            if (!currentVideo) return;
+            
+            const videoId = `${currentStorage}-${currentVideo.filename}`;
+            const userInteraction = await getUserInteraction(videoId);
+            
+            if (userInteraction === 'like') {
+                // Remove like
+                await removeInteraction(videoId);
+                likeButton.classList.remove('active');
+            } else {
+                // Add like, remove dislike if exists
+                await recordInteraction(videoId, 'like');
+                likeButton.classList.add('active');
+                dislikeButton.classList.remove('active');
+            }
+            
+            const stats = await getVideoStats(videoId);
+            likeCount.textContent = stats.likes || 0;
+            dislikeCount.textContent = stats.dislikes || 0;
+            
+            // Update the display
+            displayContent(filteredVideos);
+        }
+
+        // Dislike video
+        async function dislikeVideo() {
+            if (!currentVideo) return;
+            
+            const videoId = `${currentStorage}-${currentVideo.filename}`;
+            const userInteraction = await getUserInteraction(videoId);
+            
+            if (userInteraction === 'dislike') {
+                // Remove dislike
+                await removeInteraction(videoId);
+                dislikeButton.classList.remove('active');
+            } else {
+                // Add dislike, remove like if exists
+                await recordInteraction(videoId, 'dislike');
+                dislikeButton.classList.add('active');
+                likeButton.classList.remove('active');
+            }
+            
+            const stats = await getVideoStats(videoId);
+            likeCount.textContent = stats.likes || 0;
+            dislikeCount.textContent = stats.dislikes || 0;
+            
+            // Update the display
+            displayContent(filteredVideos);
+        }
+
+        // Download video
+        function downloadVideo() {
+            if (!currentVideo) return;
+            
+            const a = document.createElement('a');
+            a.href = currentVideo.url;
+            a.download = currentVideo.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Share video
+        function shareVideo() {
+            if (!currentVideo) return;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: currentVideo.title,
+                    text: 'Check out this video on Cornfield',
+                    url: window.location.href + '?video=' + encodeURIComponent(currentVideo.url)
+                }).catch(console.error);
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                navigator.clipboard.writeText(window.location.href + '?video=' + encodeURIComponent(currentVideo.url))
+                    .then(() => alert('Video link copied to clipboard!'))
+                    .catch(console.error);
+            }
         }
 
         // Search functionality
@@ -778,11 +1393,16 @@
             if (!query.trim()) {
                 filteredVideos = [...videoData];
             } else {
-                filteredVideos = videoData.filter(video => 
-                    video.title.toLowerCase().includes(query.toLowerCase())
+                filteredVideos = videoData.filter(item => 
+                    item.title.toLowerCase().includes(query.toLowerCase())
                 );
             }
-            displayVideos(filteredVideos);
+            displayContent(filteredVideos);
+        }
+
+        // Refresh videos
+        function refreshVideos() {
+            fetchVideosFromStorage();
         }
 
         // Event listeners
@@ -793,13 +1413,39 @@
             }
         });
 
-        searchBox.addEventListener('input', (e) => {
+        searchInput.addEventListener('input', (e) => {
             searchVideos(e.target.value);
         });
 
-        searchBtn.addEventListener('click', () => {
-            searchVideos(searchBox.value);
+        searchButton.addEventListener('click', () => {
+            searchVideos(searchInput.value);
         });
+
+        homeLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigateToDirectory('');
+        });
+
+        homeBreadcrumb.addEventListener('click', () => {
+            navigateToDirectory('');
+        });
+
+        refreshButton.addEventListener('click', refreshVideos);
+
+        sidebarHome.addEventListener('click', () => navigateToDirectory(''));
+        sidebarCorn.addEventListener('click', () => navigateToDirectory('corn'));
+
+        storage0.addEventListener('click', () => changeStorage(0));
+        storage1.addEventListener('click', () => changeStorage(1));
+        storage2.addEventListener('click', () => changeStorage(2));
+
+        viewGrid.addEventListener('click', () => changeViewMode('grid'));
+        viewList.addEventListener('click', () => changeViewMode('list'));
+
+        likeButton.addEventListener('click', likeVideo);
+        dislikeButton.addEventListener('click', dislikeVideo);
+        downloadButton.addEventListener('click', downloadVideo);
+        shareButton.addEventListener('click', shareVideo);
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -807,42 +1453,20 @@
                 closeVideoPlayer();
             }
             
-            if (e.key === 'Enter' && document.activeElement === searchBox) {
-                searchVideos(searchBox.value);
+            if (e.key === 'Enter' && document.activeElement === searchInput) {
+                searchVideos(searchInput.value);
+            }
+            
+            if (e.key === 'r' && e.ctrlKey) {
+                e.preventDefault();
+                refreshVideos();
             }
         });
 
         // Initialize the application
         document.addEventListener('DOMContentLoaded', () => {
-            fetchVideosFromStorage();
-            
-            // Add click handlers for sidebar items
-            document.querySelectorAll('.sidebar-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // Filter by storage if a storage item is clicked
-                    const text = this.textContent.trim();
-                    if (text.includes('Storage')) {
-                        if (text === 'Cornfield Storage') {
-                            filteredVideos = videoData.filter(v => v.storage === 'Cornfield Storage 1');
-                        } else {
-                            filteredVideos = videoData.filter(v => v.storage === text);
-                        }
-                        displayVideos(filteredVideos);
-                    }
-                });
-            });
-            
-            // Add click handlers for view options
-            document.querySelectorAll('.view-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    document.querySelectorAll('.view-option').forEach(o => o.classList.remove('active'));
-                    this.classList.add('active');
-                    // In a real implementation, this would change the view layout
-                });
-            });
+            updateRecentFolders();
+            navigateToDirectory('corn'); // Start in corn directory
         });
     </script>
 </body>
