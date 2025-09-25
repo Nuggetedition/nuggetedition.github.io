@@ -734,39 +734,6 @@
         const dbEndpoint = 'https://cornfieldstorage.ct.ws/db.php';
         const apiKey = 'nigger_nigger_nigger_nigger';
 
-        // DOM elements
-        const videosContainer = document.getElementById('videosContainer');
-        const contentContainer = document.getElementById('contentContainer');
-        const videoModal = document.getElementById('videoModal');
-        const videoPlayer = document.getElementById('videoPlayer');
-        const videoTitle = document.getElementById('videoTitle');
-        const videoSize = document.getElementById('videoSize');
-        const videoDate = document.getElementById('videoDate');
-        const videoStorage = document.getElementById('videoStorage');
-        const closeModal = document.getElementById('closeModal');
-        const searchInput = document.getElementById('searchInput');
-        const searchButton = document.getElementById('searchButton');
-        const breadcrumb = document.getElementById('breadcrumb');
-        const contentTitle = document.getElementById('contentTitle');
-        const currentDirectory = document.getElementById('currentDirectory');
-        const homeLink = document.getElementById('homeLink');
-        const homeBreadcrumb = document.getElementById('homeBreadcrumb');
-        const recentFolders = document.getElementById('recentFolders');
-        const refreshButton = document.getElementById('refreshButton');
-        const sidebarHome = document.getElementById('sidebarHome');
-        const sidebarCorn = document.getElementById('sidebarCorn');
-        const storage0 = document.getElementById('storage0');
-        const storage1 = document.getElementById('storage1');
-        const storage2 = document.getElementById('storage2');
-        const viewGrid = document.getElementById('viewGrid');
-        const viewList = document.getElementById('viewList');
-        const likeButton = document.getElementById('likeButton');
-        const dislikeButton = document.getElementById('dislikeButton');
-        const likeCount = document.getElementById('likeCount');
-        const dislikeCount = document.getElementById('dislikeCount');
-        const downloadButton = document.getElementById('downloadButton');
-        const shareButton = document.getElementById('shareButton');
-
         // App state
         let currentStorage = 0;
         let currentPath = 'corn';
@@ -782,164 +749,6 @@
             const id = 'user_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
             localStorage.setItem('cornfield_user_id', id);
             return id;
-        }
-
-        // Database functions (for likes/dislikes only)
-        async function dbQuery(operation, data) {
-            try {
-                const response = await fetch(dbEndpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + apiKey
-                    },
-                    body: JSON.stringify({
-                        operation: operation,
-                        ...data
-                    })
-                });
-                
-                if (!response.ok) throw new Error('HTTP ' + response.status);
-                
-                const result = await response.json();
-                return result;
-            } catch (error) {
-                console.error('Database query failed:', error);
-                return { success: false, message: error.message };
-            }
-        }
-
-        // Get video stats from database
-        async function getVideoStats(videoId) {
-            try {
-                const result = await dbQuery('select', {
-                    table: 'videos',
-                    where: { video_id: videoId }
-                });
-                
-                if (result.success && result.data.length > 0) {
-                    return result.data[0];
-                }
-            } catch (error) {
-                console.error('Error getting video stats:', error);
-            }
-            
-            return { likes: 0, dislikes: 0 };
-        }
-
-        // Get user interaction for a video
-        async function getUserInteraction(videoId) {
-            try {
-                const result = await dbQuery('select', {
-                    table: 'user_interactions',
-                    where: { 
-                        user_id: userId,
-                        video_id: videoId 
-                    }
-                });
-                
-                if (result.success && result.data.length > 0) {
-                    return result.data[0].interaction_type;
-                }
-            } catch (error) {
-                console.error('Error getting user interaction:', error);
-            }
-            
-            return null;
-        }
-
-        // Record user interaction
-        async function recordInteraction(videoId, interactionType) {
-            try {
-                // Remove any existing interaction
-                await dbQuery('delete', {
-                    table: 'user_interactions',
-                    where: { 
-                        user_id: userId,
-                        video_id: videoId 
-                    }
-                });
-                
-                // Add new interaction
-                await dbQuery('insert', {
-                    table: 'user_interactions',
-                    data: {
-                        user_id: userId,
-                        video_id: videoId,
-                        interaction_type: interactionType
-                    }
-                });
-                
-                // Update video stats
-                const currentStats = await getVideoStats(videoId);
-                const likes = interactionType === 'like' ? (currentStats.likes || 0) + 1 : (currentStats.likes || 0);
-                const dislikes = interactionType === 'dislike' ? (currentStats.dislikes || 0) + 1 : (currentStats.dislikes || 0);
-                
-                // Check if video exists in database
-                const videoExists = await dbQuery('select', {
-                    table: 'videos',
-                    where: { video_id: videoId }
-                });
-                
-                if (videoExists.success && videoExists.data.length > 0) {
-                    // Update existing video
-                    await dbQuery('update', {
-                        table: 'videos',
-                        data: { likes: likes, dislikes: dislikes },
-                        where: { video_id: videoId }
-                    });
-                } else {
-                    // Create new video entry
-                    await dbQuery('insert', {
-                        table: 'videos',
-                        data: {
-                            video_id: videoId,
-                            filename: currentVideo.filename,
-                            title: currentVideo.title,
-                            storage_site: currentStorage,
-                            directory: currentPath,
-                            likes: likes,
-                            dislikes: dislikes
-                        }
-                    });
-                }
-            } catch (error) {
-                console.error('Error recording interaction:', error);
-            }
-        }
-
-        // Remove user interaction
-        async function removeInteraction(videoId) {
-            try {
-                await dbQuery('delete', {
-                    table: 'user_interactions',
-                    where: { 
-                        user_id: userId,
-                        video_id: videoId 
-                    }
-                });
-                
-                // Update video stats
-                const currentStats = await getVideoStats(videoId);
-                const userInteraction = await getUserInteraction(videoId);
-                
-                let likes = currentStats.likes || 0;
-                let dislikes = currentStats.dislikes || 0;
-                
-                if (userInteraction === 'like') {
-                    likes = Math.max(0, likes - 1);
-                } else if (userInteraction === 'dislike') {
-                    dislikes = Math.max(0, dislikes - 1);
-                }
-                
-                await dbQuery('update', {
-                    table: 'videos',
-                    data: { likes: likes, dislikes: dislikes },
-                    where: { video_id: videoId }
-                });
-            } catch (error) {
-                console.error('Error removing interaction:', error);
-            }
         }
 
         // Format file size
@@ -979,6 +788,7 @@
 
         // Update recent folders sidebar
         function updateRecentFolders() {
+            var recentFolders = document.getElementById('recentFolders');
             recentFolders.innerHTML = '';
             
             if (recentPaths.length === 0) {
@@ -987,7 +797,7 @@
             }
             
             recentPaths.forEach(function(path) {
-                const folderItem = document.createElement('div');
+                var folderItem = document.createElement('div');
                 folderItem.className = 'sidebar-item';
                 folderItem.innerHTML = '<span>📁</span> ' + (path.split('/').pop() || 'Root');
                 folderItem.onclick = function() { navigateToDirectory(path); };
@@ -997,13 +807,14 @@
 
         // Update breadcrumb
         function updateBreadcrumb(path) {
+            var breadcrumb = document.getElementById('breadcrumb');
             breadcrumb.innerHTML = '';
             
-            const parts = path ? path.split('/') : [];
-            let currentPath = '';
+            var parts = path ? path.split('/') : [];
+            var currentPath = '';
             
             // Home breadcrumb
-            const homeItem = document.createElement('div');
+            var homeItem = document.createElement('div');
             homeItem.className = 'breadcrumb-item';
             homeItem.innerHTML = '<span>🏠</span> Home';
             homeItem.onclick = function() { navigateToDirectory(''); };
@@ -1014,12 +825,12 @@
                 if (!part) return;
                 
                 currentPath += (currentPath ? '/' : '') + part;
-                const separator = document.createElement('span');
+                var separator = document.createElement('span');
                 separator.className = 'breadcrumb-separator';
                 separator.textContent = '/';
                 breadcrumb.appendChild(separator);
                 
-                const partItem = document.createElement('div');
+                var partItem = document.createElement('div');
                 partItem.className = 'breadcrumb-item';
                 partItem.innerHTML = '<span>📁</span> ' + part;
                 partItem.onclick = function() { navigateToDirectory(currentPath); };
@@ -1032,17 +843,18 @@
             currentPath = path;
             addToRecentPaths(path);
             updateBreadcrumb(path);
-            currentDirectory.textContent = path ? '/' + path : '/';
-            contentTitle.textContent = path ? 'Folder: ' + path.split('/').pop() : 'All Videos';
+            document.getElementById('currentDirectory').textContent = path ? '/' + path : '/';
+            document.getElementById('contentTitle').textContent = path ? 'Folder: ' + path.split('/').pop() : 'All Videos';
             
             // Update sidebar active states
-            document.querySelectorAll('.sidebar-item').forEach(function(item) {
+            var sidebarItems = document.querySelectorAll('.sidebar-item');
+            sidebarItems.forEach(function(item) {
                 item.classList.remove('active');
             });
             if (path === 'corn') {
-                sidebarCorn.classList.add('active');
+                document.getElementById('sidebarCorn').classList.add('active');
             } else if (!path) {
-                sidebarHome.classList.add('active');
+                document.getElementById('sidebarHome').classList.add('active');
             }
             
             fetchVideosFromStorage();
@@ -1051,7 +863,8 @@
         // Change storage
         function changeStorage(index) {
             currentStorage = index;
-            document.querySelectorAll('.sidebar-item[data-storage]').forEach(function(item) {
+            var storageItems = document.querySelectorAll('.sidebar-item[data-storage]');
+            storageItems.forEach(function(item) {
                 item.classList.remove('active');
             });
             document.querySelector('.sidebar-item[data-storage="' + index + '"]').classList.add('active');
@@ -1061,70 +874,70 @@
         // Change view mode
         function changeViewMode(mode) {
             currentView = mode;
-            viewGrid.classList.toggle('active', mode === 'grid');
-            viewList.classList.toggle('active', mode === 'list');
+            document.getElementById('viewGrid').classList.toggle('active', mode === 'grid');
+            document.getElementById('viewList').classList.toggle('active', mode === 'list');
             displayContent(filteredVideos);
         }
 
         // Fetch videos from storage using proxy
         async function fetchVideosFromStorage() {
             // Show loading state
-            contentContainer.innerHTML = '<div class="videos-' + currentView + '"><div class="loading"><div class="loading-spinner"></div><p>Loading content from Cornfield storage...</p></div></div>';
+            document.getElementById('contentContainer').innerHTML = '<div class="videos-' + currentView + '"><div class="loading"><div class="loading-spinner"></div><p>Loading content from Cornfield storage...</p></div></div>';
 
             try {
-                const url = storageEndpoints[currentStorage] + '?action=list&dir=' + encodeURIComponent(currentPath);
+                var url = storageEndpoints[currentStorage] + '?action=list&dir=' + encodeURIComponent(currentPath);
                 console.log('Fetching from:', url);
                 
-                const response = await fetch(url);
+                var response = await fetch(url);
                 
                 if (!response.ok) {
                     throw new Error('HTTP ' + response.status + ': ' + response.statusText);
                 }
                 
-                const data = await response.json();
+                var data = await response.json();
                 
                 if (data.error) {
                     throw new Error(data.error);
                 }
                 
                 videoData = data.videos || [];
-                filteredVideos = [...videoData];
+                filteredVideos = videoData.slice();
                 
                 console.log('Found videos:', videoData.length);
                 displayContent(filteredVideos);
                 
             } catch (error) {
                 console.error('Error fetching content:', error);
-                contentContainer.innerHTML = '<div class="error"><p>Failed to load content from storage. Please check your connection and try again.</p><p><small>Error: ' + error.message + '</small></p><button class="btn btn-primary" style="margin-top: 1rem;" onclick="fetchVideosFromStorage()">Retry</button></div>';
+                document.getElementById('contentContainer').innerHTML = '<div class="error"><p>Failed to load content from storage. Please check your connection and try again.</p><p><small>Error: ' + error.message + '</small></p><button class="btn btn-primary" style="margin-top: 1rem;" onclick="fetchVideosFromStorage()">Retry</button></div>';
             }
         }
 
         // Display content (videos and folders)
-        async function displayContent(items) {
+        function displayContent(items) {
             if (items.length === 0) {
-                contentContainer.innerHTML = '<div class="videos-' + currentView + '"><div class="loading"><p>No content found in this directory.</p></div></div>';
+                document.getElementById('contentContainer').innerHTML = '<div class="videos-' + currentView + '"><div class="loading"><p>No content found in this directory.</p></div></div>';
                 return;
             }
             
-            const container = document.createElement('div');
+            var container = document.createElement('div');
             container.className = 'videos-' + currentView;
             container.id = 'videosContainer';
             
             // Separate folders and videos
-            const folders = items.filter(function(item) { return item.type === 'directory'; });
-            const videos = items.filter(function(item) { return item.type === 'video'; });
+            var folders = items.filter(function(item) { return item.type === 'directory'; });
+            var videos = items.filter(function(item) { return item.type === 'video'; });
             
             // Display folders first
             folders.forEach(function(folder) {
                 if (currentView === 'grid') {
-                    const folderCard = document.createElement('div');
+                    var folderCard = document.createElement('div');
                     folderCard.className = 'folder-card';
                     folderCard.innerHTML = '<div class="thumbnail-container"><div class="folder-icon">📁</div><div class="folder-badge">Folder</div></div><div class="folder-info"><h3 class="folder-title">' + folder.name + '</h3><div class="folder-meta"><span>Directory</span><span>Click to open</span></div></div>';
                     
                     folderCard.addEventListener('click', function() { navigateToDirectory(folder.path); });
                     container.appendChild(folderCard);
                 } else {
-                    const listItem = document.createElement('div');
+                    var listItem = document.createElement('div');
                     listItem.className = 'list-item folder';
                     listItem.innerHTML = '<div class="list-folder-icon">📁</div><div class="list-info"><h3 class="list-title">' + folder.name + '</h3><div class="list-meta"><span>Folder</span><span>Click to open</span></div></div>';
                     
@@ -1133,184 +946,62 @@
                 }
             });
             
-            // Then display videos with database stats
-            for (let i = 0; i < videos.length; i++) {
-                const video = videos[i];
-                const videoId = currentStorage + '-' + video.filename;
-                let stats = { likes: 0, dislikes: 0 };
-                let userInteraction = null;
-                
-                // Try to get stats from database, but don't fail if it doesn't work
-                try {
-                    stats = await getVideoStats(videoId);
-                    userInteraction = await getUserInteraction(videoId);
-                } catch (error) {
-                    console.warn('Could not get stats for video:', videoId, error);
-                }
-                
+            // Then display videos
+            videos.forEach(function(video) {
                 if (currentView === 'grid') {
-                    const videoCard = document.createElement('div');
+                    var videoCard = document.createElement('div');
                     videoCard.className = 'video-card';
-                    videoCard.innerHTML = '<div class="thumbnail-container"><img src="https://placehold.co/400x225/333/fff?text=' + encodeURIComponent(video.title) + '" class="thumbnail"><div class="video-duration">' + formatFileSize(video.size) + '</div></div><div class="video-info"><h3 class="video-title">' + video.title + '</h3><div class="video-meta"><span>' + video.extension.toUpperCase() + '</span><span>' + formatDate(video.modified) + '</span></div><div class="video-meta"><span>👍 ' + (stats.likes || 0) + '</span><span>👎 ' + (stats.dislikes || 0) + '</span></div></div>';
+                    videoCard.innerHTML = '<div class="thumbnail-container"><img src="https://placehold.co/400x225/333/fff?text=' + encodeURIComponent(video.title) + '" class="thumbnail"><div class="video-duration">' + formatFileSize(video.size) + '</div></div><div class="video-info"><h3 class="video-title">' + video.title + '</h3><div class="video-meta"><span>' + video.extension.toUpperCase() + '</span><span>' + formatDate(video.modified) + '</span></div></div>';
                     
                     videoCard.addEventListener('click', function() { openVideoPlayer(video); });
                     container.appendChild(videoCard);
                 } else {
-                    const listItem = document.createElement('div');
+                    var listItem = document.createElement('div');
                     listItem.className = 'list-item';
-                    listItem.innerHTML = '<img src="https://placehold.co/160x90/333/fff?text=' + encodeURIComponent(video.title) + '" class="list-thumbnail"><div class="list-info"><h3 class="list-title">' + video.title + '</h3><div class="list-meta"><span>' + formatFileSize(video.size) + '</span><span>' + video.extension.toUpperCase() + '</span><span>' + formatDate(video.modified) + '</span></div><div class="list-meta"><span>👍 ' + (stats.likes || 0) + '</span><span>👎 ' + (stats.dislikes || 0) + '</span></div></div>';
+                    listItem.innerHTML = '<img src="https://placehold.co/160x90/333/fff?text=' + encodeURIComponent(video.title) + '" class="list-thumbnail"><div class="list-info"><h3 class="list-title">' + video.title + '</h3><div class="list-meta"><span>' + formatFileSize(video.size) + '</span><span>' + video.extension.toUpperCase() + '</span><span>' + formatDate(video.modified) + '</span></div></div>';
                     
                     listItem.addEventListener('click', function() { openVideoPlayer(video); });
                     container.appendChild(listItem);
                 }
-            }
+            });
             
-            contentContainer.innerHTML = '';
-            contentContainer.appendChild(container);
+            document.getElementById('contentContainer').innerHTML = '';
+            document.getElementById('contentContainer').appendChild(container);
         }
 
         // Open video player
-        async function openVideoPlayer(video) {
+        function openVideoPlayer(video) {
             currentVideo = video;
-            const videoId = currentStorage + '-' + video.filename;
-            let stats = { likes: 0, dislikes: 0 };
-            let userInteraction = null;
             
-            // Try to get stats from database, but don't fail if it doesn't work
-            try {
-                stats = await getVideoStats(videoId);
-                userInteraction = await getUserInteraction(videoId);
-            } catch (error) {
-                console.warn('Could not get stats for video:', videoId, error);
-            }
+            document.getElementById('videoPlayer').src = video.url;
+            document.getElementById('videoTitle').textContent = video.title;
+            document.getElementById('videoSize').textContent = formatFileSize(video.size);
+            document.getElementById('videoDate').textContent = formatDate(video.modified);
+            document.getElementById('videoStorage').textContent = storageEndpoints[currentStorage].split('/')[2];
             
-            videoPlayer.src = video.url;
-            videoTitle.textContent = video.title;
-            videoSize.textContent = formatFileSize(video.size);
-            videoDate.textContent = formatDate(video.modified);
-            videoStorage.textContent = storageEndpoints[currentStorage].split('/')[2];
-            likeCount.textContent = stats.likes || 0;
-            dislikeCount.textContent = stats.dislikes || 0;
-            
-            // Update button states based on user interaction
-            likeButton.classList.toggle('active', userInteraction === 'like');
-            dislikeButton.classList.toggle('active', userInteraction === 'dislike');
-            
-            videoModal.style.display = 'flex';
+            document.getElementById('videoModal').style.display = 'flex';
             document.body.style.overflow = 'hidden';
             
             // Try to play the video
-            videoPlayer.play().catch(function(e) {
+            document.getElementById('videoPlayer').play().catch(function(e) {
                 console.log('Autoplay prevented:', e);
             });
         }
 
         // Close video player
         function closeVideoPlayer() {
-            videoModal.style.display = 'none';
+            document.getElementById('videoModal').style.display = 'none';
             document.body.style.overflow = 'auto';
-            videoPlayer.pause();
-            videoPlayer.currentTime = 0;
+            document.getElementById('videoPlayer').pause();
+            document.getElementById('videoPlayer').currentTime = 0;
             currentVideo = null;
-        }
-
-        // Like video
-        async function likeVideo() {
-            if (!currentVideo) return;
-            
-            const videoId = currentStorage + '-' + currentVideo.filename;
-            let userInteraction = null;
-            
-            // Try to get current interaction
-            try {
-                userInteraction = await getUserInteraction(videoId);
-            } catch (error) {
-                console.warn('Could not get user interaction:', error);
-            }
-            
-            if (userInteraction === 'like') {
-                // Remove like
-                try {
-                    await removeInteraction(videoId);
-                    likeButton.classList.remove('active');
-                } catch (error) {
-                    console.warn('Could not remove like:', error);
-                }
-            } else {
-                // Add like, remove dislike if exists
-                try {
-                    await recordInteraction(videoId, 'like');
-                    likeButton.classList.add('active');
-                    dislikeButton.classList.remove('active');
-                } catch (error) {
-                    console.warn('Could not record like:', error);
-                }
-            }
-            
-            // Update counts
-            try {
-                const stats = await getVideoStats(videoId);
-                likeCount.textContent = stats.likes || 0;
-                dislikeCount.textContent = stats.dislikes || 0;
-            } catch (error) {
-                console.warn('Could not update counts:', error);
-            }
-            
-            // Update the display
-            displayContent(filteredVideos);
-        }
-
-        // Dislike video
-        async function dislikeVideo() {
-            if (!currentVideo) return;
-            
-            const videoId = currentStorage + '-' + currentVideo.filename;
-            let userInteraction = null;
-            
-            // Try to get current interaction
-            try {
-                userInteraction = await getUserInteraction(videoId);
-            } catch (error) {
-                console.warn('Could not get user interaction:', error);
-            }
-            
-            if (userInteraction === 'dislike') {
-                // Remove dislike
-                try {
-                    await removeInteraction(videoId);
-                    dislikeButton.classList.remove('active');
-                } catch (error) {
-                    console.warn('Could not remove dislike:', error);
-                }
-            } else {
-                // Add dislike, remove like if exists
-                try {
-                    await recordInteraction(videoId, 'dislike');
-                    dislikeButton.classList.add('active');
-                    likeButton.classList.remove('active');
-                } catch (error) {
-                    console.warn('Could not record dislike:', error);
-                }
-            }
-            
-            // Update counts
-            try {
-                const stats = await getVideoStats(videoId);
-                likeCount.textContent = stats.likes || 0;
-                dislikeCount.textContent = stats.dislikes || 0;
-            } catch (error) {
-                console.warn('Could not update counts:', error);
-            }
-            
-            // Update the display
-            displayContent(filteredVideos);
         }
 
         // Download video
         function downloadVideo() {
             if (!currentVideo) return;
             
-            const a = document.createElement('a');
+            var a = document.createElement('a');
             a.href = currentVideo.url;
             a.download = currentVideo.filename;
             document.body.appendChild(a);
@@ -1339,7 +1030,7 @@
         // Search functionality
         function searchVideos(query) {
             if (!query.trim()) {
-                filteredVideos = [...videoData];
+                filteredVideos = videoData.slice();
             } else {
                 filteredVideos = videoData.filter(function(item) {
                     return item.title.toLowerCase().includes(query.toLowerCase());
@@ -1354,55 +1045,53 @@
         }
 
         // Event listeners
-        closeModal.addEventListener('click', closeVideoPlayer);
-        videoModal.addEventListener('click', function(e) {
-            if (e.target === videoModal) {
+        document.getElementById('closeModal').addEventListener('click', closeVideoPlayer);
+        document.getElementById('videoModal').addEventListener('click', function(e) {
+            if (e.target === document.getElementById('videoModal')) {
                 closeVideoPlayer();
             }
         });
 
-        searchInput.addEventListener('input', function(e) {
+        document.getElementById('searchInput').addEventListener('input', function(e) {
             searchVideos(e.target.value);
         });
 
-        searchButton.addEventListener('click', function() {
-            searchVideos(searchInput.value);
+        document.getElementById('searchButton').addEventListener('click', function() {
+            searchVideos(document.getElementById('searchInput').value);
         });
 
-        homeLink.addEventListener('click', function(e) {
+        document.getElementById('homeLink').addEventListener('click', function(e) {
             e.preventDefault();
             navigateToDirectory('');
         });
 
-        homeBreadcrumb.addEventListener('click', function() {
+        document.getElementById('homeBreadcrumb').addEventListener('click', function() {
             navigateToDirectory('');
         });
 
-        refreshButton.addEventListener('click', refreshVideos);
+        document.getElementById('refreshButton').addEventListener('click', refreshVideos);
 
-        sidebarHome.addEventListener('click', function() { navigateToDirectory(''); });
-        sidebarCorn.addEventListener('click', function() { navigateToDirectory('corn'); });
+        document.getElementById('sidebarHome').addEventListener('click', function() { navigateToDirectory(''); });
+        document.getElementById('sidebarCorn').addEventListener('click', function() { navigateToDirectory('corn'); });
 
-        storage0.addEventListener('click', function() { changeStorage(0); });
-        storage1.addEventListener('click', function() { changeStorage(1); });
-        storage2.addEventListener('click', function() { changeStorage(2); });
+        document.getElementById('storage0').addEventListener('click', function() { changeStorage(0); });
+        document.getElementById('storage1').addEventListener('click', function() { changeStorage(1); });
+        document.getElementById('storage2').addEventListener('click', function() { changeStorage(2); });
 
-        viewGrid.addEventListener('click', function() { changeViewMode('grid'); });
-        viewList.addEventListener('click', function() { changeViewMode('list'); });
+        document.getElementById('viewGrid').addEventListener('click', function() { changeViewMode('grid'); });
+        document.getElementById('viewList').addEventListener('click', function() { changeViewMode('list'); });
 
-        likeButton.addEventListener('click', likeVideo);
-        dislikeButton.addEventListener('click', dislikeVideo);
-        downloadButton.addEventListener('click', downloadVideo);
-        shareButton.addEventListener('click', shareVideo);
+        document.getElementById('downloadButton').addEventListener('click', downloadVideo);
+        document.getElementById('shareButton').addEventListener('click', shareVideo);
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && videoModal.style.display === 'flex') {
+            if (e.key === 'Escape' && document.getElementById('videoModal').style.display === 'flex') {
                 closeVideoPlayer();
             }
             
-            if (e.key === 'Enter' && document.activeElement === searchInput) {
-                searchVideos(searchInput.value);
+            if (e.key === 'Enter' && document.activeElement === document.getElementById('searchInput')) {
+                searchVideos(document.getElementById('searchInput').value);
             }
             
             if (e.key === 'r' && e.ctrlKey) {
