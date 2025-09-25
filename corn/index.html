@@ -32,7 +32,6 @@
             overflow-x: hidden;
         }
 
-        /* Header Styles */
         header {
             background: linear-gradient(135deg, var(--darker-bg) 0%, #1a1a1a 100%);
             padding: 1rem 2rem;
@@ -142,13 +141,11 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
 
-        /* Main Layout */
         .app-container {
             display: flex;
             min-height: calc(100vh - 80px);
         }
 
-        /* Sidebar Styles */
         .sidebar {
             width: 240px;
             background: var(--darker-bg);
@@ -217,7 +214,6 @@
             color: var(--text-secondary);
         }
 
-        /* Content Area */
         .content {
             flex: 1;
             padding: 2rem;
@@ -260,7 +256,6 @@
             color: var(--dark-bg);
         }
 
-        /* Videos Grid */
         .videos-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -318,7 +313,7 @@
 
         .thumbnail-container {
             position: relative;
-            padding-top: 56.25%; /* 16:9 aspect ratio */
+            padding-top: 56.25%;
             overflow: hidden;
         }
 
@@ -393,7 +388,6 @@
             gap: 1rem;
         }
 
-        /* Video Player Modal */
         .modal {
             display: none;
             position: fixed;
@@ -425,7 +419,7 @@
         .video-player-container {
             width: 100%;
             position: relative;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            padding-bottom: 56.25%;
         }
 
         .video-player {
@@ -507,7 +501,6 @@
             transform: scale(1.1);
         }
 
-        /* Loading States */
         .loading {
             text-align: center;
             padding: 3rem;
@@ -530,7 +523,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Error States */
         .error {
             text-align: center;
             padding: 2rem;
@@ -540,7 +532,6 @@
             margin: 1rem 0;
         }
 
-        /* Responsive Design */
         @media (max-width: 1024px) {
             .videos-grid {
                 grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -604,7 +595,6 @@
             }
         }
 
-        /* Scrollbar Styling */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -701,7 +691,6 @@
         </main>
     </div>
 
-    <!-- Video Player Modal -->
     <div class="modal" id="videoModal">
         <button class="close-modal" id="closeModal">&times;</button>
         <div class="modal-content">
@@ -784,7 +773,7 @@
         let videoData = [];
         let filteredVideos = [];
         let recentPaths = JSON.parse(localStorage.getItem('cornfield_recent_paths') || '[]');
-        let currentView = 'grid'; // 'grid' or 'list'
+        let currentView = 'grid';
         let currentVideo = null;
         let userId = localStorage.getItem('cornfield_user_id') || generateUserId();
 
@@ -796,21 +785,21 @@
         }
 
         // Database functions (for likes/dislikes only)
-        async function dbQuery(operation, data = {}) {
+        async function dbQuery(operation, data) {
             try {
                 const response = await fetch(dbEndpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
+                        'Authorization': 'Bearer ' + apiKey
                     },
                     body: JSON.stringify({
-                        operation,
+                        operation: operation,
                         ...data
                     })
                 });
                 
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                if (!response.ok) throw new Error('HTTP ' + response.status);
                 
                 const result = await response.json();
                 return result;
@@ -896,7 +885,7 @@
                     // Update existing video
                     await dbQuery('update', {
                         table: 'videos',
-                        data: { likes, dislikes },
+                        data: { likes: likes, dislikes: dislikes },
                         where: { video_id: videoId }
                     });
                 } else {
@@ -945,7 +934,7 @@
                 
                 await dbQuery('update', {
                     table: 'videos',
-                    data: { likes, dislikes },
+                    data: { likes: likes, dislikes: dislikes },
                     where: { video_id: videoId }
                 });
             } catch (error) {
@@ -970,17 +959,17 @@
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             
             if (diffDays === 1) return 'Yesterday';
-            if (diffDays < 7) return `${diffDays} days ago`;
-            if (diffDays < 30) return `${Math.floor(diffDays/7)} weeks ago`;
-            if (diffDays < 365) return `${Math.floor(diffDays/30)} months ago`;
-            return `${Math.floor(diffDays/365)} years ago`;
+            if (diffDays < 7) return diffDays + ' days ago';
+            if (diffDays < 30) return Math.floor(diffDays/7) + ' weeks ago';
+            if (diffDays < 365) return Math.floor(diffDays/30) + ' months ago';
+            return Math.floor(diffDays/365) + ' years ago';
         }
 
         // Add path to recent folders
         function addToRecentPaths(path) {
             if (!path) return;
             
-            recentPaths = recentPaths.filter(p => p !== path);
+            recentPaths = recentPaths.filter(function(p) { return p !== path; });
             recentPaths.unshift(path);
             recentPaths = recentPaths.slice(0, 5);
             
@@ -997,11 +986,11 @@
                 return;
             }
             
-            recentPaths.forEach(path => {
+            recentPaths.forEach(function(path) {
                 const folderItem = document.createElement('div');
                 folderItem.className = 'sidebar-item';
-                folderItem.innerHTML = `<span>📁</span> ${path.split('/').pop() || 'Root'}`;
-                folderItem.onclick = () => navigateToDirectory(path);
+                folderItem.innerHTML = '<span>📁</span> ' + (path.split('/').pop() || 'Root');
+                folderItem.onclick = function() { navigateToDirectory(path); };
                 recentFolders.appendChild(folderItem);
             });
         }
@@ -1017,11 +1006,11 @@
             const homeItem = document.createElement('div');
             homeItem.className = 'breadcrumb-item';
             homeItem.innerHTML = '<span>🏠</span> Home';
-            homeItem.onclick = () => navigateToDirectory('');
+            homeItem.onclick = function() { navigateToDirectory(''); };
             breadcrumb.appendChild(homeItem);
             
             // Path parts
-            parts.forEach(part => {
+            parts.forEach(function(part) {
                 if (!part) return;
                 
                 currentPath += (currentPath ? '/' : '') + part;
@@ -1032,8 +1021,8 @@
                 
                 const partItem = document.createElement('div');
                 partItem.className = 'breadcrumb-item';
-                partItem.innerHTML = `<span>📁</span> ${part}`;
-                partItem.onclick = () => navigateToDirectory(currentPath);
+                partItem.innerHTML = '<span>📁</span> ' + part;
+                partItem.onclick = function() { navigateToDirectory(currentPath); };
                 breadcrumb.appendChild(partItem);
             });
         }
@@ -1043,11 +1032,13 @@
             currentPath = path;
             addToRecentPaths(path);
             updateBreadcrumb(path);
-            currentDirectory.textContent = path ? `/${path}` : '/';
-            contentTitle.textContent = path ? `Folder: ${path.split('/').pop()}` : 'All Videos';
+            currentDirectory.textContent = path ? '/' + path : '/';
+            contentTitle.textContent = path ? 'Folder: ' + path.split('/').pop() : 'All Videos';
             
             // Update sidebar active states
-            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.sidebar-item').forEach(function(item) {
+                item.classList.remove('active');
+            });
             if (path === 'corn') {
                 sidebarCorn.classList.add('active');
             } else if (!path) {
@@ -1060,8 +1051,10 @@
         // Change storage
         function changeStorage(index) {
             currentStorage = index;
-            document.querySelectorAll('.sidebar-item[data-storage]').forEach(item => item.classList.remove('active'));
-            document.querySelector(`.sidebar-item[data-storage="${index}"]`).classList.add('active');
+            document.querySelectorAll('.sidebar-item[data-storage]').forEach(function(item) {
+                item.classList.remove('active');
+            });
+            document.querySelector('.sidebar-item[data-storage="' + index + '"]').classList.add('active');
             navigateToDirectory(currentPath);
         }
 
@@ -1076,23 +1069,16 @@
         // Fetch videos from storage using proxy
         async function fetchVideosFromStorage() {
             // Show loading state
-            contentContainer.innerHTML = `
-                <div class="videos-${currentView}">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <p>Loading content from Cornfield storage...</p>
-                    </div>
-                </div>
-            `;
+            contentContainer.innerHTML = '<div class="videos-' + currentView + '"><div class="loading"><div class="loading-spinner"></div><p>Loading content from Cornfield storage...</p></div></div>';
 
             try {
-                const url = `${storageEndpoints[currentStorage]}?action=list&dir=${encodeURIComponent(currentPath)}`;
+                const url = storageEndpoints[currentStorage] + '?action=list&dir=' + encodeURIComponent(currentPath);
                 console.log('Fetching from:', url);
                 
                 const response = await fetch(url);
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    throw new Error('HTTP ' + response.status + ': ' + response.statusText);
                 }
                 
                 const data = await response.json();
@@ -1109,80 +1095,48 @@
                 
             } catch (error) {
                 console.error('Error fetching content:', error);
-                contentContainer.innerHTML = `
-                    <div class="error">
-                        <p>Failed to load content from storage. Please check your connection and try again.</p>
-                        <p><small>Error: ${error.message}</small></p>
-                        <button class="btn btn-primary" style="margin-top: 1rem;" onclick="fetchVideosFromStorage()">Retry</button>
-                    </div>
-                `;
+                contentContainer.innerHTML = '<div class="error"><p>Failed to load content from storage. Please check your connection and try again.</p><p><small>Error: ' + error.message + '</small></p><button class="btn btn-primary" style="margin-top: 1rem;" onclick="fetchVideosFromStorage()">Retry</button></div>';
             }
         }
 
         // Display content (videos and folders)
         async function displayContent(items) {
             if (items.length === 0) {
-                contentContainer.innerHTML = `
-                    <div class="videos-${currentView}">
-                        <div class="loading">
-                            <p>No content found in this directory.</p>
-                        </div>
-                    </div>
-                `;
+                contentContainer.innerHTML = '<div class="videos-' + currentView + '"><div class="loading"><p>No content found in this directory.</p></div></div>';
                 return;
             }
             
             const container = document.createElement('div');
-            container.className = `videos-${currentView}`;
+            container.className = 'videos-' + currentView;
             container.id = 'videosContainer';
             
             // Separate folders and videos
-            const folders = items.filter(item => item.type === 'directory');
-            const videos = items.filter(item => item.type === 'video');
+            const folders = items.filter(function(item) { return item.type === 'directory'; });
+            const videos = items.filter(function(item) { return item.type === 'video'; });
             
             // Display folders first
-            folders.forEach(folder => {
+            folders.forEach(function(folder) {
                 if (currentView === 'grid') {
                     const folderCard = document.createElement('div');
                     folderCard.className = 'folder-card';
-                    folderCard.innerHTML = `
-                        <div class="thumbnail-container">
-                            <div class="folder-icon">📁</div>
-                            <div class="folder-badge">Folder</div>
-                        </div>
-                        <div class="folder-info">
-                            <h3 class="folder-title">${folder.name}</h3>
-                            <div class="folder-meta">
-                                <span>Directory</span>
-                                <span>Click to open</span>
-                            </div>
-                        </div>
-                    `;
+                    folderCard.innerHTML = '<div class="thumbnail-container"><div class="folder-icon">📁</div><div class="folder-badge">Folder</div></div><div class="folder-info"><h3 class="folder-title">' + folder.name + '</h3><div class="folder-meta"><span>Directory</span><span>Click to open</span></div></div>';
                     
-                    folderCard.addEventListener('click', () => navigateToDirectory(folder.path));
+                    folderCard.addEventListener('click', function() { navigateToDirectory(folder.path); });
                     container.appendChild(folderCard);
                 } else {
                     const listItem = document.createElement('div');
                     listItem.className = 'list-item folder';
-                    listItem.innerHTML = `
-                        <div class="list-folder-icon">📁</div>
-                        <div class="list-info">
-                            <h3 class="list-title">${folder.name}</h3>
-                            <div class="list-meta">
-                                <span>Folder</span>
-                                <span>Click to open</span>
-                            </div>
-                        </div>
-                    `;
+                    listItem.innerHTML = '<div class="list-folder-icon">📁</div><div class="list-info"><h3 class="list-title">' + folder.name + '</h3><div class="list-meta"><span>Folder</span><span>Click to open</span></div></div>';
                     
-                    listItem.addEventListener('click', () => navigateToDirectory(folder.path));
+                    listItem.addEventListener('click', function() { navigateToDirectory(folder.path); });
                     container.appendChild(listItem);
                 }
             });
             
             // Then display videos with database stats
-            for (const video of videos) {
-                const videoId = `${currentStorage}-${video.filename}`;
+            for (let i = 0; i < videos.length; i++) {
+                const video = videos[i];
+                const videoId = currentStorage + '-' + video.filename;
                 let stats = { likes: 0, dislikes: 0 };
                 let userInteraction = null;
                 
@@ -1197,46 +1151,16 @@
                 if (currentView === 'grid') {
                     const videoCard = document.createElement('div');
                     videoCard.className = 'video-card';
-                    videoCard.innerHTML = `
-                        <div class="thumbnail-container">
-                            <img src="https://placehold.co/400x225/333/fff?text=${encodeURIComponent(video.title)}" class="thumbnail">
-                            <div class="video-duration">${formatFileSize(video.size)}</div>
-                        </div>
-                        <div class="video-info">
-                            <h3 class="video-title">${video.title}</h3>
-                            <div class="video-meta">
-                                <span>${video.extension.toUpperCase()}</span>
-                                <span>${formatDate(video.modified)}</span>
-                            </div>
-                            <div class="video-meta">
-                                <span>👍 ${stats.likes || 0}</span>
-                                <span>👎 ${stats.dislikes || 0}</span>
-                            </div>
-                        </div>
-                    `;
+                    videoCard.innerHTML = '<div class="thumbnail-container"><img src="https://placehold.co/400x225/333/fff?text=' + encodeURIComponent(video.title) + '" class="thumbnail"><div class="video-duration">' + formatFileSize(video.size) + '</div></div><div class="video-info"><h3 class="video-title">' + video.title + '</h3><div class="video-meta"><span>' + video.extension.toUpperCase() + '</span><span>' + formatDate(video.modified) + '</span></div><div class="video-meta"><span>👍 ' + (stats.likes || 0) + '</span><span>👎 ' + (stats.dislikes || 0) + '</span></div></div>';
                     
-                    videoCard.addEventListener('click', () => openVideoPlayer(video));
+                    videoCard.addEventListener('click', function() { openVideoPlayer(video); });
                     container.appendChild(videoCard);
                 } else {
                     const listItem = document.createElement('div');
                     listItem.className = 'list-item';
-                    listItem.innerHTML = `
-                        <img src="https://placehold.co/160x90/333/fff?text=${encodeURIComponent(video.title)}" class="list-thumbnail">
-                        <div class="list-info">
-                            <h3 class="list-title">${video.title}</h3>
-                            <div class="list-meta">
-                                <span>${formatFileSize(video.size)}</span>
-                                <span>${video.extension.toUpperCase()}</span>
-                                <span>${formatDate(video.modified)}</span>
-                            </div>
-                            <div class="list-meta">
-                                <span>👍 ${stats.likes || 0}</span>
-                                <span>👎 ${stats.dislikes || 0}</span>
-                            </div>
-                        </div>
-                    `;
+                    listItem.innerHTML = '<img src="https://placehold.co/160x90/333/fff?text=' + encodeURIComponent(video.title) + '" class="list-thumbnail"><div class="list-info"><h3 class="list-title">' + video.title + '</h3><div class="list-meta"><span>' + formatFileSize(video.size) + '</span><span>' + video.extension.toUpperCase() + '</span><span>' + formatDate(video.modified) + '</span></div><div class="list-meta"><span>👍 ' + (stats.likes || 0) + '</span><span>👎 ' + (stats.dislikes || 0) + '</span></div></div>';
                     
-                    listItem.addEventListener('click', () => openVideoPlayer(video));
+                    listItem.addEventListener('click', function() { openVideoPlayer(video); });
                     container.appendChild(listItem);
                 }
             }
@@ -1248,7 +1172,7 @@
         // Open video player
         async function openVideoPlayer(video) {
             currentVideo = video;
-            const videoId = `${currentStorage}-${video.filename}`;
+            const videoId = currentStorage + '-' + video.filename;
             let stats = { likes: 0, dislikes: 0 };
             let userInteraction = null;
             
@@ -1276,7 +1200,7 @@
             document.body.style.overflow = 'hidden';
             
             // Try to play the video
-            videoPlayer.play().catch(e => {
+            videoPlayer.play().catch(function(e) {
                 console.log('Autoplay prevented:', e);
             });
         }
@@ -1294,7 +1218,7 @@
         async function likeVideo() {
             if (!currentVideo) return;
             
-            const videoId = `${currentStorage}-${currentVideo.filename}`;
+            const videoId = currentStorage + '-' + currentVideo.filename;
             let userInteraction = null;
             
             // Try to get current interaction
@@ -1340,7 +1264,7 @@
         async function dislikeVideo() {
             if (!currentVideo) return;
             
-            const videoId = `${currentStorage}-${currentVideo.filename}`;
+            const videoId = currentStorage + '-' + currentVideo.filename;
             let userInteraction = null;
             
             // Try to get current interaction
@@ -1407,7 +1331,7 @@
             } else {
                 // Fallback for browsers that don't support Web Share API
                 navigator.clipboard.writeText(window.location.href + '?video=' + encodeURIComponent(currentVideo.url))
-                    .then(() => alert('Video link copied to clipboard!'))
+                    .then(function() { alert('Video link copied to clipboard!'); })
                     .catch(console.error);
             }
         }
@@ -1417,9 +1341,9 @@
             if (!query.trim()) {
                 filteredVideos = [...videoData];
             } else {
-                filteredVideos = videoData.filter(item => 
-                    item.title.toLowerCase().includes(query.toLowerCase())
-                );
+                filteredVideos = videoData.filter(function(item) {
+                    return item.title.toLowerCase().includes(query.toLowerCase());
+                });
             }
             displayContent(filteredVideos);
         }
@@ -1431,40 +1355,40 @@
 
         // Event listeners
         closeModal.addEventListener('click', closeVideoPlayer);
-        videoModal.addEventListener('click', (e) => {
+        videoModal.addEventListener('click', function(e) {
             if (e.target === videoModal) {
                 closeVideoPlayer();
             }
         });
 
-        searchInput.addEventListener('input', (e) => {
+        searchInput.addEventListener('input', function(e) {
             searchVideos(e.target.value);
         });
 
-        searchButton.addEventListener('click', () => {
+        searchButton.addEventListener('click', function() {
             searchVideos(searchInput.value);
         });
 
-        homeLink.addEventListener('click', (e) => {
+        homeLink.addEventListener('click', function(e) {
             e.preventDefault();
             navigateToDirectory('');
         });
 
-        homeBreadcrumb.addEventListener('click', () => {
+        homeBreadcrumb.addEventListener('click', function() {
             navigateToDirectory('');
         });
 
         refreshButton.addEventListener('click', refreshVideos);
 
-        sidebarHome.addEventListener('click', () => navigateToDirectory(''));
-        sidebarCorn.addEventListener('click', () => navigateToDirectory('corn'));
+        sidebarHome.addEventListener('click', function() { navigateToDirectory(''); });
+        sidebarCorn.addEventListener('click', function() { navigateToDirectory('corn'); });
 
-        storage0.addEventListener('click', () => changeStorage(0));
-        storage1.addEventListener('click', () => changeStorage(1));
-        storage2.addEventListener('click', () => changeStorage(2));
+        storage0.addEventListener('click', function() { changeStorage(0); });
+        storage1.addEventListener('click', function() { changeStorage(1); });
+        storage2.addEventListener('click', function() { changeStorage(2); });
 
-        viewGrid.addEventListener('click', () => changeViewMode('grid'));
-        viewList.addEventListener('click', () => changeViewMode('list'));
+        viewGrid.addEventListener('click', function() { changeViewMode('grid'); });
+        viewList.addEventListener('click', function() { changeViewMode('list'); });
 
         likeButton.addEventListener('click', likeVideo);
         dislikeButton.addEventListener('click', dislikeVideo);
@@ -1472,7 +1396,7 @@
         shareButton.addEventListener('click', shareVideo);
 
         // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
+        document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && videoModal.style.display === 'flex') {
                 closeVideoPlayer();
             }
@@ -1488,9 +1412,9 @@
         });
 
         // Initialize the application
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', function() {
             updateRecentFolders();
-            navigateToDirectory('corn'); // Start in corn directory
+            navigateToDirectory('corn');
         });
     </script>
 </body>
